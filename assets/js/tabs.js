@@ -112,6 +112,7 @@ const Tabs = {
             const tab = document.createElement('div');
             tab.className = `tab${page.id === AppState.currentPageId ? ' active' : ''}`;
             tab.dataset.id = page.id;
+            tab.draggable = true;
 
             const nameSpan = document.createElement('span');
             nameSpan.className = 'tab-name';
@@ -182,6 +183,40 @@ const Tabs = {
             nameSpan.addEventListener('dblclick', (e) => {
                 e.stopPropagation();
                 this.renamePageInline(page.id, nameSpan);
+            });
+
+            // Tab drag-and-drop
+            tab.addEventListener('dragstart', (e) => {
+                if (e.target !== tab) return;
+                this._dragState = { type: 'tab', id: page.id, el: tab };
+                tab.classList.add('tab-dragging');
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', page.id.toString());
+            });
+
+            tab.addEventListener('dragend', () => {
+                tab.classList.remove('tab-dragging');
+                this.container.querySelectorAll('.tab.tab-drag-over').forEach(el => el.classList.remove('tab-drag-over'));
+                this._dragState = null;
+            });
+
+            tab.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                if (this._dragState && this._dragState.type === 'tab' && this._dragState.id !== page.id) {
+                    tab.classList.add('tab-drag-over');
+                }
+            });
+
+            tab.addEventListener('dragleave', () => {
+                tab.classList.remove('tab-drag-over');
+            });
+
+            tab.addEventListener('drop', (e) => {
+                e.preventDefault();
+                tab.classList.remove('tab-drag-over');
+                if (this._dragState && this._dragState.type === 'tab' && this._dragState.id !== page.id) {
+                    this.reorderTabs(this._dragState.id, page.id);
+                }
             });
 
             this.container.appendChild(tab);
@@ -296,6 +331,21 @@ const Tabs = {
                 Blocks.render([]);
             }
         }
+    },
+
+    async reorderTabs(movedId, targetId) {
+        const pages = [...AppState.pages];
+        const movedIdx = pages.findIndex(p => p.id === movedId);
+        const targetIdx = pages.findIndex(p => p.id === targetId);
+
+        if (movedIdx === -1 || targetIdx === -1) return;
+
+        const [moved] = pages.splice(movedIdx, 1);
+        pages.splice(targetIdx, 0, moved);
+
+        const order = pages.map(p => p.id);
+        await api('pages:reorder', { order });
+        await this.load();
     },
 
     // ===== Background Editor =====

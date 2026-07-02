@@ -105,6 +105,17 @@ button {
     text-overflow: ellipsis;
 }
 
+/* ===== Tab Drag States ===== */
+.tab.tab-dragging {
+    opacity: 0.4;
+    transform: scale(0.95);
+}
+
+.tab.tab-drag-over {
+    border-color: var(--accent);
+    background: var(--tab-hover-bg);
+}
+
 /* ===== Tab Kebab Menu ===== */
 .tab .tab-kebab {
     display: inline-flex;
