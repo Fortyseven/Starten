@@ -22,10 +22,34 @@ class PagesHandler
         }
 
         $maxOrder = \Database::value('SELECT MAX(sort_order) FROM pages') ?? -1;
-        \Database::exec('INSERT INTO pages (name, sort_order) VALUES (?, ?)', [$name, $maxOrder + 1]);
+        $background = isset($input['background']) ? json_encode($input['background']) : '{}';
+        \Database::exec('INSERT INTO pages (name, sort_order, background) VALUES (?, ?, ?)', [$name, $maxOrder + 1, $background]);
         $id = \Database::lastInsertId();
 
         $page = \Database::one('SELECT * FROM pages WHERE id = ?', [$id]);
+        apiResponse(['page' => $page]);
+    }
+
+    public function update(): void
+    {
+        $input = $this->jsonInput();
+        $id = (int) ($input['id'] ?? 0);
+
+        if ($id <= 0) {
+            apiError('Page id is required');
+        }
+
+        // Allow updating background
+        if (isset($input['background'])) {
+            $background = json_encode($input['background']);
+            \Database::exec('UPDATE pages SET background = ? WHERE id = ?', [$background, $id]);
+        }
+
+        $page = \Database::one('SELECT * FROM pages WHERE id = ?', [$id]);
+        if ($page === false) {
+            apiError('Page not found', 404);
+        }
+
         apiResponse(['page' => $page]);
     }
 

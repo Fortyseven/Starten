@@ -87,6 +87,65 @@ class Render
                 </div>
             </div>
         </template>
+
+        <!-- Background editor slide-in panel -->
+        <div id="bg-panel-overlay" class="bg-panel-overlay bg-hidden"></div>
+        <aside id="bg-panel" class="bg-panel bg-hidden">
+            <div class="bg-panel-header">
+                <h2>Page Background</h2>
+                <button id="bg-panel-close" class="bg-panel-close" aria-label="Close">×</button>
+            </div>
+            <div class="bg-panel-body">
+                <!-- Mode selector -->
+                <div class="bg-mode-tabs">
+                    <button class="bg-mode-tab active" data-mode="solid">Solid</button>
+                    <button class="bg-mode-tab" data-mode="gradient">Gradient</button>
+                    <button class="bg-mode-tab" data-mode="image">Image</button>
+                </div>
+
+                <!-- Solid color -->
+                <div class="bg-mode-panel active" data-mode="solid">
+                    <label class="bg-label">Color
+                        <input type="color" id="bg-solid-color" value="#4361ee">
+                    </label>
+                </div>
+
+                <!-- Gradient -->
+                <div class="bg-mode-panel" data-mode="gradient">
+                    <label class="bg-label">Start Color
+                        <input type="color" id="bg-gradient-start" value="#4361ee">
+                    </label>
+                    <label class="bg-label">Stop Color
+                        <input type="color" id="bg-gradient-stop" value="#f72585">
+                    </label>
+                    <label class="bg-label">Angle
+                        <input type="range" id="bg-gradient-angle" min="0" max="360" value="135">
+                        <span id="bg-gradient-angle-value">135°</span>
+                    </label>
+                </div>
+
+                <!-- Image -->
+                <div class="bg-mode-panel" data-mode="image">
+                    <label class="bg-label">Image URL
+                        <input type="text" id="bg-image-url" placeholder="https://example.com/image.jpg">
+                    </label>
+                    <label class="bg-label bg-file-label">
+                        <span>Or upload an image</span>
+                        <input type="file" id="bg-image-upload" accept="image/*" hidden>
+                    </label>
+                    <div id="bg-image-preview" class="bg-preview bg-hidden"></div>
+                </div>
+
+                <!-- Live preview -->
+                <div class="bg-label">Preview
+                    <div id="bg-preview-area" class="bg-preview-area"></div>
+                </div>
+            </div>
+            <div class="bg-panel-footer">
+                <button id="bg-panel-cancel" class="bg-btn bg-btn-secondary">Cancel</button>
+                <button id="bg-panel-save" class="bg-btn bg-btn-primary">Save</button>
+            </div>
+        </aside>
     </div>
 
     <script src="assets/js/app.js"></script>
