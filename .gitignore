@@ -1,3 +1,6 @@
+# Environment
+.env
+
 # SQLite database
 data/
 
@@ -13,3 +16,5 @@ data/
 
 PLAN.md
 SECURITY_CHECKLIST.md
+IDEAS.md
+Justfile

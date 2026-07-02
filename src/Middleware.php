@@ -7,7 +7,7 @@ class Middleware
 {
     /**
      * Check if the client IP is in the whitelist.
-     * Returns 403 and exits if not allowed.
+     * Redirects to network47.org if not allowed.
      */
     public static function checkIp(): void
     {
@@ -19,9 +19,7 @@ class Middleware
         $clientIp = $_SERVER['REMOTE_ADDR'] ?? '';
 
         if (!in_array($clientIp, $allowed, true)) {
-            http_response_code(403);
-            header('Content-Type: text/plain; charset=utf-8');
-            echo "Access denied. Your IP ({$clientIp}) is not on the allowed list.";
+            header('Location: https://network47.org', true, 302);
             exit;
         }
     }

@@ -13,7 +13,7 @@ Organize bookmarks into pages and blocks, drag to reorder, and customize with li
 - **Light/dark themes** — toggle with persistence via localStorage
 - **Custom backgrounds** — solid color, gradient, or image with live preview
 - **Export/import** — backup your layout as JSON and restore it anywhere
-- **IP whitelist** — simple access control (no accounts needed)
+- **IP whitelist** — access control via `.env` (redirects non-whitelisted visitors)
 - **Auto-save** — every change is saved immediately
 
 ## Tech Stack
@@ -31,12 +31,24 @@ Place the project files on any PHP-capable web server (Apache, Nginx, Caddy, etc
 
 ### 2. Configure
 
-Edit `config.php`:
+Copy `.env.example` to `.env` and set your allowed IPs:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env`:
+
+```
+# Allowed IP addresses (comma-separated)
+ALLOWED_IPS=127.0.0.1, ::1, 192.168.1.50
+```
+
+Non-whitelisted visitors are redirected to `network47.org`.
+
+Other settings are in `config.php`:
 
 ```php
-// Add your IP addresses
-$allowed_ips = ['127.0.0.1', '::1', '192.168.1.50'];
-
 // Database path (auto-created on first visit)
 $db_path = __DIR__ . '/data/startpage.db';
 
@@ -83,7 +95,7 @@ The `type`, `config` (JSON), and `data` (JSON) columns are extensible — new bl
 
 ## Known Limitations
 
-- **No user authentication** beyond IP whitelist
+- **No user authentication** beyond IP whitelist (configurable in `.env`)
 - **Single-user** — shared state, no accounts
 - **CSRF protection** via double-submit cookie pattern (SameSite=Strict)
 - **No search** — can be added as a future feature

@@ -5,13 +5,9 @@
  * Edit these values to configure your start page.
  */
 
-// Allowed IP addresses (exact match only).
-// Add your server's internal IP, localhost, etc.
-$allowed_ips = [
-    '127.0.0.1',
-    '::1',
-    // '192.168.1.5',
-];
+// Allowed IP addresses — loaded from .env (ALLOWED_IPS, comma-separated).
+// See .env.example for reference.
+$allowed_ips = array_map('trim', explode(',', getenv('ALLOWED_IPS') ?: ''));
 
 // Path to the SQLite database file (relative to this file's directory).
 $db_path = __DIR__ . '/data/startpage.db';
