@@ -23,6 +23,10 @@ body {
     line-height: 1.5;
 }
 
+button {
+    font-family: inherit;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
     width: 8px;
