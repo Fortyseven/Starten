@@ -1,11 +1,16 @@
 /**
- * blocks.js — Block rendering, drag-and-drop (reorder blocks).
+ * blocks.js — Block rendering, drag-and-drop (reorder blocks), type picker.
+ *
+ * Orchestrates block rendering by delegating to Block type classes.
  */
 
 const Blocks = {
     container: null,
     blockTemplate: null,
     dragState: null,
+
+    /** @type {Map<number, Object>} blockId -> Block instance */
+    _instances: new Map(),
 
     init() {
         this.container = document.getElementById('blocks-container');
@@ -40,6 +45,13 @@ const Blocks = {
             return;
         }
         AppState.blocks = result.blocks;
+
+        // Destroy old block instances
+        for (const instance of this._instances.values()) {
+            instance.destroy();
+        }
+        this._instances.clear();
+
         this.render(result.blocks);
     },
 
@@ -88,22 +100,46 @@ const Blocks = {
         });
 
         // Dropdown: Rename
-        dropdown.querySelector('.block-dropdown-item:nth-child(1)').addEventListener('click', (e) => {
+        dropdown.querySelector('.block-dropdown-item[data-action="rename"]').addEventListener('click', (e) => {
             e.stopPropagation();
             this.closeBlockMenus();
             this.renameBlockInline(block.id, titleEl);
         });
 
+        // Dropdown: Config
+        const configItem = dropdown.querySelector('.block-dropdown-item[data-action="config"]');
+        if (configItem) {
+            configItem.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.closeBlockMenus();
+                const instance = this._instances.get(block.id);
+                if (instance) {
+                    instance.showConfigModal();
+                }
+            });
+        }
+
         // Dropdown: Delete
-        dropdown.querySelector('.block-dropdown-item:nth-child(2)').addEventListener('click', () => {
+        dropdown.querySelector('.block-dropdown-item[data-action="delete"]').addEventListener('click', () => {
             this.closeBlockMenus();
             this.deleteBlock(block.id);
         });
 
-        // Add item button
-        blockEl.querySelector('.add-item-btn').addEventListener('click', () => {
-            Items.showAddForm(blockEl, block.id);
-        });
+        // Add item button — only show for blocks that support items
+        const addItemBtn = blockEl.querySelector('.add-item-btn');
+        const blockType = block.type || 'link_list';
+        const blockClass = Block.get(blockType);
+        if (blockClass && blockClass.prototype.hasItems && new blockClass(block).hasItems()) {
+            addItemBtn.style.display = '';
+            addItemBtn.addEventListener('click', () => {
+                const instance = this._instances.get(block.id);
+                if (instance && instance.showAddForm) {
+                    instance.showAddForm(blockEl);
+                }
+            });
+        } else {
+            addItemBtn.style.display = 'none';
+        }
 
         // Block drag-and-drop
         blockEl.addEventListener('dragstart', (e) => {
@@ -139,16 +175,13 @@ const Blocks = {
             }
         });
 
-        // Render items
+        // Delegate content rendering to the block type class
         const itemsContainer = blockEl.querySelector('.block-items');
-        const items = block.items || [];
-        items.forEach(item => {
-            const itemEl = Items.createItemElement(item);
-            itemsContainer.appendChild(itemEl);
-        });
-
-        // Setup container-level drag-and-drop (once per block)
-        Items.setupContainer(itemsContainer);
+        const instance = Block.create(blockType, block);
+        if (instance) {
+            instance.render(itemsContainer);
+            this._instances.set(block.id, instance);
+        }
 
         return blockEl;
     },
@@ -196,22 +229,120 @@ const Blocks = {
         if (!block) return;
         if (!confirm(`Delete block "${block.title}"?`)) return;
 
+        // Destroy the block instance
+        const instance = this._instances.get(blockId);
+        if (instance) {
+            instance.destroy();
+            this._instances.delete(blockId);
+        }
+
         await api('blocks:delete', { id: blockId });
         await this.load();
     },
 
-    async addBlock() {
-        const name = prompt('Block title:');
-        if (!name || name.trim() === '') return;
+    /**
+     * Open the block type picker modal.
+     */
+    addBlock() {
+        const overlay = document.getElementById('type-picker-overlay');
+        const modal = document.getElementById('type-picker-modal');
+        const nameInput = document.getElementById('type-picker-name');
+        const saveBtn = document.getElementById('type-picker-save');
+        const cancelBtn = document.getElementById('type-picker-cancel');
+        const typeCards = modal.querySelectorAll('.type-card');
 
-        const result = await api('blocks:add', {
-            page_id: AppState.currentPageId,
-            title: name.trim(),
-            type: 'link_list',
+        // Populate type cards from registry
+        const typesContainer = modal.querySelector('.type-cards');
+        typesContainer.innerHTML = '';
+        const types = Block.getTypes();
+        types.forEach((typeInfo, i) => {
+            const card = document.createElement('div');
+            card.className = 'type-card' + (i === 0 ? ' selected' : '');
+            card.dataset.type = typeInfo.type;
+            card.innerHTML = `
+                <div class="type-card-icon">${this._getTypeIcon(typeInfo.type)}</div>
+                <div class="type-card-label">${typeInfo.label}</div>
+            `;
+            card.addEventListener('click', () => {
+                typesContainer.querySelectorAll('.type-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+            });
+            typesContainer.appendChild(card);
         });
 
-        if (result && result.block) {
-            await this.load();
+        nameInput.value = '';
+        overlay.classList.add('open');
+        modal.classList.add('open');
+        setTimeout(() => nameInput.focus(), 100);
+
+        const save = async () => {
+            const name = nameInput.value.trim();
+            if (!name) {
+                nameInput.focus();
+                return;
+            }
+
+            const selectedCard = typesContainer.querySelector('.type-card.selected');
+            const selectedType = selectedCard ? selectedCard.dataset.type : 'link_list';
+
+            // Get default config for the selected type
+            const blockClass = Block.get(selectedType);
+            const defaultConfig = blockClass && typeof blockClass.defaultConfig === 'function'
+                ? blockClass.defaultConfig()
+                : {};
+
+            this.closeTypePicker();
+            const result = await api('blocks:add', {
+                page_id: AppState.currentPageId,
+                title: name,
+                type: selectedType,
+                config: defaultConfig,
+            });
+
+            if (result && result.block) {
+                await this.load();
+            }
+        };
+
+        saveBtn.onclick = save;
+        cancelBtn.onclick = () => this.closeTypePicker();
+        const closeBtn = modal.querySelector('#type-picker-close');
+        if (closeBtn) closeBtn.onclick = () => this.closeTypePicker();
+        overlay.onclick = () => this.closeTypePicker();
+
+        // Keyboard handling
+        const onKeydown = (e) => {
+            if (e.key === 'Escape') {
+                this.closeTypePicker();
+            }
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                save();
+            }
+        };
+        nameInput.addEventListener('keydown', onKeydown);
+        this._typePickerKeydown = onKeydown;
+    },
+
+    closeTypePicker() {
+        const overlay = document.getElementById('type-picker-overlay');
+        const modal = document.getElementById('type-picker-modal');
+        const nameInput = document.getElementById('type-picker-name');
+
+        if (this._typePickerKeydown) {
+            nameInput.removeEventListener('keydown', this._typePickerKeydown);
+            this._typePickerKeydown = null;
+        }
+
+        overlay.classList.remove('open');
+        modal.classList.remove('open');
+    },
+
+    _getTypeIcon(type) {
+        switch (type) {
+            case 'link_list': return '🔗';
+            case 'clock': return '🕐';
+            default: return '📦';
         }
     },
 

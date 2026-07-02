@@ -38,6 +38,9 @@ class BlocksHandler
         $pageId = (int) ($input['page_id'] ?? 0);
         $title = trim($input['title'] ?? 'New Block');
         $type = trim($input['type'] ?? 'link_list');
+        $config = isset($input['config'])
+            ? (is_array($input['config']) ? json_encode($input['config']) : $input['config'])
+            : '{}';
 
         if ($pageId <= 0) {
             apiError('page_id is required');
@@ -48,8 +51,8 @@ class BlocksHandler
         ) ?? -1;
 
         \Database::exec(
-            'INSERT INTO blocks (page_id, type, title, sort_order) VALUES (?, ?, ?, ?)',
-            [$pageId, $type, $title, $maxOrder + 1]
+            'INSERT INTO blocks (page_id, type, title, config, sort_order) VALUES (?, ?, ?, ?, ?)',
+            [$pageId, $type, $title, $config, $maxOrder + 1]
         );
         $id = \Database::lastInsertId();
 

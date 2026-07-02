@@ -30,6 +30,7 @@ class Render
     <title>{$appName}</title>
     <link rel="stylesheet" href="assets/css/theme.css">
     <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/blocks.css">
 </head>
 <body>
     <div id="app">
@@ -68,8 +69,9 @@ class Render
                         <button class="add-item-btn" title="Add link" aria-label="Add link">+</button>
                         <button class="block-kebab" title="Block actions" aria-label="Block actions" aria-haspopup="true" aria-expanded="false">⋮</button>
                         <div class="block-dropdown" role="menu">
-                            <button class="block-dropdown-item" role="menuitem">✏️ Rename</button>
-                            <button class="block-dropdown-item block-dropdown-item-danger" role="menuitem">🗑 Delete block</button>
+                            <button class="block-dropdown-item" role="menuitem" data-action="rename">✏️ Rename</button>
+                            <button class="block-dropdown-item" role="menuitem" data-action="config">⚙ Config</button>
+                            <button class="block-dropdown-item block-dropdown-item-danger" role="menuitem" data-action="delete">🗑 Delete block</button>
                         </div>
                     </div>
                 </div>
@@ -184,6 +186,28 @@ class Render
             </div>
         </aside>
 
+        <!-- Block Type Picker Modal -->
+        <div id="type-picker-overlay" class="type-picker-overlay"></div>
+        <div id="type-picker-modal" class="type-picker-modal">
+            <div class="type-picker-header">
+                <h2>Add Block</h2>
+                <button id="type-picker-close" class="type-picker-close" aria-label="Close">&times;</button>
+            </div>
+            <div class="type-picker-body">
+                <label class="type-picker-label">
+                    Block name
+                    <input type="text" id="type-picker-name" placeholder="My Block" autofocus>
+                </label>
+                <div class="type-picker-types">
+                    <div class="type-cards"></div>
+                </div>
+            </div>
+            <div class="type-picker-footer">
+                <button id="type-picker-cancel" class="type-picker-btn type-picker-btn-secondary">Cancel</button>
+                <button id="type-picker-save" class="type-picker-btn type-picker-btn-primary">Add Block</button>
+            </div>
+        </div>
+
         <!-- Settings Modal -->
         <div id="settings-overlay" class="settings-overlay"></div>
         <div id="settings-modal" class="settings-modal">
@@ -237,6 +261,9 @@ class Render
     <script src="assets/js/app.js"></script>
     <script src="assets/js/theme.js"></script>
     <script src="assets/js/tabs.js"></script>
+    <script src="assets/js/blocks/Block.js"></script>
+    <script src="assets/js/blocks/LinkListBlock.js"></script>
+    <script src="assets/js/blocks/ClockBlock.js"></script>
     <script src="assets/js/blocks.js"></script>
     <script src="assets/js/items.js"></script>
     <script src="assets/js/settings.js"></script>
