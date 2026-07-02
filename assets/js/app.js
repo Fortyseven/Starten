@@ -71,5 +71,6 @@ document.addEventListener('DOMContentLoaded', () => {
     Theme.init();
 
     // Then load tabs and blocks
+    Blocks.init();
     Tabs.init();
 });

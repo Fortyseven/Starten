@@ -18,7 +18,6 @@ const Blocks = {
     },
 
     async load() {
-        this.init();
         if (!AppState.currentPageId) {
             console.warn('Blocks.load: no currentPageId set');
             this.render([]);
