@@ -219,6 +219,8 @@ const Blocks = {
         }
     },
 
+    _openDropdowns: new Map(),
+
     toggleBlockMenu(kebabBtn, dropdown) {
         const isOpen = dropdown.classList.contains('open');
         this.closeBlockMenus();
@@ -226,33 +228,39 @@ const Blocks = {
             dropdown.classList.add('open');
             kebabBtn.setAttribute('aria-expanded', 'true');
 
-            // Allow dropdown to escape .block overflow:hidden
-            const block = kebabBtn.closest('.block');
-            if (block) block.style.overflow = 'visible';
+            // Move dropdown to body to escape .block overflow:hidden
+            const rect = kebabBtn.getBoundingClientRect();
+            const parent = dropdown.parentElement;
+            this._openDropdowns.set(dropdown, { parent, nextSibling: dropdown.nextElementSibling });
+
+            document.body.appendChild(dropdown);
+            dropdown.style.position = 'fixed';
+            dropdown.style.top = (rect.bottom + 4) + 'px';
+            dropdown.style.left = rect.left + 'px';
 
             // Reposition if overflowing viewport
             requestAnimationFrame(() => {
-                const rect = dropdown.getBoundingClientRect();
-                if (rect.right > window.innerWidth) {
-                    dropdown.style.right = '0';
-                    dropdown.style.left = 'auto';
+                const ddRect = dropdown.getBoundingClientRect();
+                if (ddRect.right > window.innerWidth) {
+                    dropdown.style.left = (window.innerWidth - ddRect.width - 8) + 'px';
                 }
-                if (rect.left < 0) {
-                    dropdown.style.left = '0';
-                    dropdown.style.right = 'auto';
+                if (ddRect.left < 0) {
+                    dropdown.style.left = '8px';
                 }
             });
         }
     },
 
     closeBlockMenus() {
-        document.querySelectorAll('.block-dropdown.open').forEach(d => {
-            d.classList.remove('open');
-            d.style.right = '';
-            d.style.left = '';
-            const block = d.closest('.block');
-            if (block) block.style.overflow = '';
-        });
+        for (const [dropdown, info] of this._openDropdowns) {
+            dropdown.classList.remove('open');
+            dropdown.style.position = '';
+            dropdown.style.top = '';
+            dropdown.style.left = '';
+            dropdown.style.right = '';
+            info.parent.insertBefore(dropdown, info.nextSibling);
+        }
+        this._openDropdowns.clear();
         document.querySelectorAll('.block-kebab[aria-expanded="true"]').forEach(b =>
             b.setAttribute('aria-expanded', 'false')
         );
