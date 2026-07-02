@@ -7,13 +7,23 @@ const Export = {
         const exportBtn = document.getElementById('export-btn');
         const importBtn = document.getElementById('import-btn');
         const importFile = document.getElementById('import-file');
+        const menuBtn = document.getElementById('system-menu-btn');
+        const dropdown = document.getElementById('system-menu-dropdown');
 
         if (exportBtn) {
-            exportBtn.addEventListener('click', () => this.export());
+            exportBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.closeMenu();
+                this.export();
+            });
         }
 
         if (importBtn) {
-            importBtn.addEventListener('click', () => importFile.click());
+            importBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.closeMenu();
+                importFile.click();
+            });
         }
 
         if (importFile) {
@@ -25,6 +35,49 @@ const Export = {
                 }
             });
         }
+
+        // Toggle dropdown on kebab button click
+        if (menuBtn && dropdown) {
+            menuBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.toggleMenu();
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!dropdown.contains(e.target) && e.target !== menuBtn) {
+                    this.closeMenu();
+                }
+            });
+
+            // Close on Escape
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    this.closeMenu();
+                }
+            });
+        }
+    },
+
+    toggleMenu() {
+        const dropdown = document.getElementById('system-menu-dropdown');
+        const menuBtn = document.getElementById('system-menu-btn');
+        if (!dropdown || !menuBtn) return;
+
+        const isOpen = dropdown.classList.contains('open');
+        if (isOpen) {
+            this.closeMenu();
+        } else {
+            dropdown.classList.add('open');
+            menuBtn.setAttribute('aria-expanded', 'true');
+        }
+    },
+
+    closeMenu() {
+        const dropdown = document.getElementById('system-menu-dropdown');
+        const menuBtn = document.getElementById('system-menu-btn');
+        if (dropdown) dropdown.classList.remove('open');
+        if (menuBtn) menuBtn.setAttribute('aria-expanded', 'false');
     },
 
     export() {

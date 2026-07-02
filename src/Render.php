@@ -36,11 +36,14 @@ class Render
                     <span class="theme-icon-light">🌙</span>
                     <span class="theme-icon-dark">☀️</span>
                 </button>
-                <div id="export-menu">
-                    <button id="export-btn" title="Export layout" aria-label="Export layout">⬇ Export</button>
-                    <button id="import-btn" title="Import layout" aria-label="Import layout">⬆ Import</button>
-                    <input type="file" id="import-file" accept=".json" hidden>
+                <div id="system-menu" class="dropdown">
+                    <button id="system-menu-btn" title="Menu" aria-label="Menu" aria-haspopup="true" aria-expanded="false">⋮</button>
+                    <div id="system-menu-dropdown" class="dropdown-menu" role="menu">
+                        <button id="export-btn" role="menuitem" title="Export layout">⬇ Export</button>
+                        <button id="import-btn" role="menuitem" title="Import layout">⬆ Import</button>
+                    </div>
                 </div>
+                <input type="file" id="import-file" accept=".json" hidden>
             </div>
         </header>
 
