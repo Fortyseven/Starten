@@ -17,6 +17,7 @@ class Router
         'blocks' => Handlers\BlocksHandler::class,
         'items'  => Handlers\ItemsHandler::class,
         'export' => Handlers\ExportHandler::class,
+        'backups' => Handlers\ExportHandler::class,
     ];
 
     /**

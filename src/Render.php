@@ -48,8 +48,7 @@ class Render
                 <div id="system-menu" class="dropdown">
                     <button id="system-menu-btn" title="Menu" aria-label="Menu" aria-haspopup="true" aria-expanded="false">⋮</button>
                     <div id="system-menu-dropdown" class="dropdown-menu" role="menu">
-                        <button id="export-btn" role="menuitem" title="Export layout">⬇ Export</button>
-                        <button id="import-btn" role="menuitem" title="Import layout">⬆ Import</button>
+                        <button id="settings-btn" role="menuitem" title="Settings">⚙ Settings</button>
                     </div>
                 </div>
                 <input type="file" id="import-file" accept=".json" hidden>
@@ -159,6 +158,55 @@ class Render
                 <button id="bg-panel-save" class="bg-btn bg-btn-primary">Save</button>
             </div>
         </aside>
+
+        <!-- Settings Modal -->
+        <div id="settings-overlay" class="settings-overlay"></div>
+        <div id="settings-modal" class="settings-modal">
+            <div class="settings-header">
+                <h2>Settings</h2>
+                <button id="settings-close" class="settings-close" aria-label="Close">&times;</button>
+            </div>
+            <div class="settings-body">
+                <!-- Tab bar -->
+                <div class="settings-tabs">
+                    <button class="settings-tab active" data-tab="general">General</button>
+                    <button class="settings-tab" data-tab="backups">Backups</button>
+                </div>
+
+                <!-- General tab -->
+                <div class="settings-panel active" data-tab="general">
+                    <div class="settings-section">
+                        <h3>Appearance</h3>
+                        <div class="settings-row">
+                            <span class="settings-label">Theme</span>
+                            <button id="settings-theme-toggle" class="settings-btn">Toggle Light/Dark</button>
+                        </div>
+                    </div>
+                    <div class="settings-section">
+                        <h3>About</h3>
+                        <p class="settings-about">Start Page Dashboard</p>
+                    </div>
+                </div>
+
+                <!-- Backups tab -->
+                <div class="settings-panel" data-tab="backups">
+                    <div class="settings-section">
+                        <h3>Backup &amp; Restore</h3>
+                        <div class="settings-actions">
+                            <button id="settings-create-backup" class="settings-btn settings-btn-primary">Create Backup</button>
+                            <button id="settings-export-btn" class="settings-btn settings-btn-secondary">Export JSON</button>
+                            <button id="settings-import-btn" class="settings-btn settings-btn-secondary">Import JSON</button>
+                        </div>
+                    </div>
+                    <div class="settings-section">
+                        <h3>Existing Backups</h3>
+                        <div id="backups-list" class="backups-list">
+                            <div class="backups-empty">No backups yet. Create one or import a JSON file.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="assets/js/app.js"></script>
@@ -166,7 +214,7 @@ class Render
     <script src="assets/js/tabs.js"></script>
     <script src="assets/js/blocks.js"></script>
     <script src="assets/js/items.js"></script>
-    <script src="assets/js/export.js"></script>
+    <script src="assets/js/settings.js"></script>
 </body>
 </html>
 HTML;
