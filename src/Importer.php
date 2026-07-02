@@ -11,9 +11,14 @@ class Importer
     private const SUPPORTED_VERSIONS = [1];
 
     /**
+     * Maximum number of backup files to retain.
+     */
+    private const MAX_BACKUPS = 5;
+
+    /**
      * Import layout from JSON data.
      *
-     * Clears all existing data and restores from the import.
+     * Creates an auto-backup before clearing, then restores from the import.
      */
     public function import(array $data): array
     {
@@ -27,6 +32,9 @@ class Importer
         if (!is_array($pages)) {
             return ['error' => 'Missing or invalid "pages" array'];
         }
+
+        // Create auto-backup before clearing
+        $this->createBackup();
 
         $db = Database::get();
         $db->exec('BEGIN TRANSACTION');
@@ -101,6 +109,36 @@ class Importer
         } catch (\Exception $e) {
             $db->exec('ROLLBACK');
             return ['error' => 'Import failed: ' . $e->getMessage()];
+        }
+    }
+
+    /**
+     * Export current state to data/backups/ before import clears it.
+     * Keeps a rolling window of the last MAX_BACKUPS backups.
+     */
+    private function createBackup(): void
+    {
+        $backupDir = __DIR__ . '/../data/backups';
+        if (!is_dir($backupDir)) {
+            mkdir($backupDir, 0755, true);
+        }
+
+        $exporter = new \Exporter();
+        $data = $exporter->export();
+        $timestamp = date('Y-m-d_H-i-s');
+        $filename = "startpage-{$timestamp}.json";
+        $path = $backupDir . '/' . $filename;
+
+        file_put_contents($path, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+
+        // Prune old backups, keeping the newest MAX_BACKUPS
+        $files = glob($backupDir . '/startpage-*.json');
+        if (is_array($files)) {
+            // Sort newest first
+            rsort($files);
+            foreach (array_slice($files, self::MAX_BACKUPS) as $old) {
+                @unlink($old);
+            }
         }
     }
 }
