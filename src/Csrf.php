@@ -37,7 +37,8 @@ class Csrf
         $params = [
             'expires' => time() + 86400, // 24h
             'path' => '/',
-            'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+            'secure' => ($_SERVER['HTTPS'] ?? '') !== 'off'
+                || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https',
             'samesite' => 'Strict',
         ];
         setcookie(self::COOKIE_NAME, $token, $params);
