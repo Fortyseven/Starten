@@ -222,7 +222,7 @@ spl_autoload_register(function (\$c) { require __DIR__.'/src/'.str_replace('\\\\
 - **Single-user** — No user accounts, shared state
 - **SQLite file locking** — WAL mode enabled; concurrent writes handled by busy_timeout
 - **Export format versioning** — Current version: 1. Importer rejects unknown versions but ignores unknown fields (forward-compatible)
-- **No CSRF protection** — Single-user app; add if exposing publicly
+- **CSRF protection** — Double-submit cookie with SameSite=Strict; token persisted across tabs via cookie reuse
 - **PHP autoloader** — Simple prefix-based; no PSR-4, no Composer
 
 ---

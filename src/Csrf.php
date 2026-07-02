@@ -13,7 +13,7 @@
 
 class Csrf
 {
-    private const COOKIE_NAME = 'startpage_csrf';
+    public const COOKIE_NAME = 'startpage_csrf';
     private const HEADER_NAME = 'X-CSRF-Token';
 
     /**
@@ -37,6 +37,7 @@ class Csrf
         $params = [
             'expires' => time() + 86400, // 24h
             'path' => '/',
+            'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
             'samesite' => 'Strict',
         ];
         setcookie(self::COOKIE_NAME, $token, $params);

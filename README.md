@@ -85,7 +85,7 @@ The `type`, `config` (JSON), and `data` (JSON) columns are extensible — new bl
 
 - **No user authentication** beyond IP whitelist
 - **Single-user** — shared state, no accounts
-- **No CSRF protection** — intended for private/self-hosted use
+- **CSRF protection** via double-submit cookie pattern (SameSite=Strict)
 - **No search** — can be added as a future feature
 
 ## License

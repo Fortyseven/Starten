@@ -12,9 +12,13 @@ class Render
     {
         $appName = $GLOBALS['app_name'] ?? 'Start Page';
 
-        // Generate CSRF token and set cookie
-        $csrfToken = \Csrf::generate();
-        \Csrf::setCookie($csrfToken);
+        // Generate CSRF token — reuse existing cookie value for multi-tab safety
+        if (empty($_COOKIE[\Csrf::COOKIE_NAME])) {
+            $csrfToken = \Csrf::generate();
+            \Csrf::setCookie($csrfToken);
+        } else {
+            $csrfToken = $_COOKIE[\Csrf::COOKIE_NAME];
+        }
 
         echo <<<HTML
 <!DOCTYPE html>

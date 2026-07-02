@@ -80,9 +80,33 @@ const Export = {
         if (menuBtn) menuBtn.setAttribute('aria-expanded', 'false');
     },
 
-    export() {
-        // Navigate to the export endpoint which triggers a download
-        window.location.href = 'index.php?action=export:export';
+    async export() {
+        // POST with CSRF header, then trigger download via blob URL
+        try {
+            const response = await fetch('index.php?action=export:export', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': csrfToken(),
+                },
+            });
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({ error: response.statusText }));
+                alert('Export failed: ' + err.error);
+                return;
+            }
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'startpage-export-' + new Date().toISOString().slice(0, 10) + '.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } catch (e) {
+            alert('Export failed: ' + e.message);
+        }
     },
 
     async import(file) {
