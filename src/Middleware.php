@@ -18,8 +18,9 @@ class Middleware
 
         $clientIp = $_SERVER['REMOTE_ADDR'] ?? '';
 
+        $redirect = getenv('REDIRECT_URL') ?: 'https://network47.org';
         if (!in_array($clientIp, $allowed, true)) {
-            header('Location: https://network47.org', true, 302);
+            header('Location: ' . $redirect, true, 302);
             exit;
         }
     }

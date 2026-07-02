@@ -42,9 +42,12 @@ Edit `.env`:
 ```
 # Allowed IP addresses (comma-separated)
 ALLOWED_IPS=127.0.0.1, ::1, 192.168.1.50
+
+# URL to redirect non-whitelisted visitors to
+REDIRECT_URL=https://network47.org
 ```
 
-Non-whitelisted visitors are redirected to `network47.org`.
+Non-whitelisted visitors are redirected to `REDIRECT_URL` (defaults to `network47.org`).
 
 Other settings are in `config.php`:
 
