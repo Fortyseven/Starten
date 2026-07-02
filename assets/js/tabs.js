@@ -134,6 +134,16 @@ const Tabs = {
             dropdown.className = 'tab-dropdown';
             dropdown.setAttribute('role', 'menu');
 
+            const renameItem = document.createElement('button');
+            renameItem.className = 'tab-dropdown-item';
+            renameItem.setAttribute('role', 'menuitem');
+            renameItem.innerHTML = '✏️ Rename';
+            renameItem.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.closeTabMenus();
+                this.renamePageInline(page.id, nameSpan);
+            });
+
             const editBgItem = document.createElement('button');
             editBgItem.className = 'tab-dropdown-item';
             editBgItem.setAttribute('role', 'menuitem');
@@ -154,6 +164,7 @@ const Tabs = {
                 this.deletePage(page.id);
             });
 
+            dropdown.appendChild(renameItem);
             dropdown.appendChild(editBgItem);
             dropdown.appendChild(deleteItem);
 
@@ -247,6 +258,7 @@ const Tabs = {
             nameEl.removeAttribute('contenteditable');
             const newName = nameEl.textContent.trim();
             if (newName && newName !== page.name) {
+                page.name = newName;
                 await api('pages:rename', { id: pageId, name: newName });
             }
             this.render();
