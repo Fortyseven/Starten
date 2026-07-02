@@ -1,0 +1,103 @@
+<?php
+/**
+ * Importer — JSON → layout restore with validation.
+ *
+ * Forward-compatible: unknown fields in the JSON are silently ignored.
+ * Required fields are validated. Schema evolution won't break old exports.
+ */
+
+class Importer
+{
+    private const SUPPORTED_VERSIONS = [1];
+
+    /**
+     * Import layout from JSON data.
+     *
+     * Clears all existing data and restores from the import.
+     */
+    public function import(array $data): array
+    {
+        // Validate version
+        $version = (int) ($data['version'] ?? 0);
+        if (!in_array($version, self::SUPPORTED_VERSIONS, true)) {
+            return ['error' => "Unsupported export version: {$version}. Supported: " . implode(', ', self::SUPPORTED_VERSIONS)];
+        }
+
+        $pages = $data['pages'] ?? [];
+        if (!is_array($pages)) {
+            return ['error' => 'Missing or invalid "pages" array'];
+        }
+
+        $db = Database::get();
+        $db->exec('BEGIN TRANSACTION');
+
+        try {
+            // Clear existing data (cascade handles blocks → items)
+            Database::execRaw('DELETE FROM pages');
+            Database::execRaw('DELETE FROM blocks');
+            Database::execRaw('DELETE FROM block_items');
+
+            // Reset auto-increment counters
+            Database::execRaw("DELETE FROM sqlite_sequence WHERE name IN ('pages', 'blocks', 'block_items')");
+
+            $pageOrder = 0;
+            foreach ($pages as $pageData) {
+                $name = trim($pageData['name'] ?? 'Imported Page');
+                if ($name === '') {
+                    $name = 'Imported Page';
+                }
+
+                Database::exec(
+                    'INSERT INTO pages (name, sort_order) VALUES (?, ?)',
+                    [$name, $pageOrder]
+                );
+                $pageId = Database::lastInsertId();
+
+                $blockOrder = 0;
+                $blocks = $pageData['blocks'] ?? [];
+                foreach ($blocks as $blockData) {
+                    $type = trim($blockData['type'] ?? 'link_list');
+                    $title = trim($blockData['title'] ?? 'Imported Block');
+                    $config = $blockData['config'] ?? [];
+                    $configJson = is_array($config) ? json_encode($config) : '{}';
+
+                    Database::exec(
+                        'INSERT INTO blocks (page_id, type, title, config, sort_order) VALUES (?, ?, ?, ?, ?)',
+                        [$pageId, $type, $title, $configJson, $blockOrder]
+                    );
+                    $blockId = Database::lastInsertId();
+
+                    $itemOrder = 0;
+                    $items = $blockData['items'] ?? [];
+                    foreach ($items as $itemData) {
+                        $itemTitle = trim($itemData['title'] ?? '');
+                        $itemUrl = isset($itemData['url']) ? trim($itemData['url']) : null;
+                        $itemDataExtra = $itemData['data'] ?? [];
+                        $itemDataJson = is_array($itemDataExtra) ? json_encode($itemDataExtra) : '{}';
+
+                        Database::exec(
+                            'INSERT INTO block_items (block_id, title, url, data, sort_order) VALUES (?, ?, ?, ?, ?)',
+                            [$blockId, $itemTitle, $itemUrl, $itemDataJson, $itemOrder]
+                        );
+                        $itemOrder++;
+                    }
+
+                    $blockOrder++;
+                }
+
+                $pageOrder++;
+            }
+
+            $db->exec('COMMIT');
+
+            return [
+                'success' => true,
+                'message' => "Imported {$pageOrder} page(s) with blocks and items.",
+            ];
+
+        } catch (\Exception $e) {
+            $db->exec('ROLLBACK');
+            return ['error' => 'Import failed: ' . $e->getMessage()];
+        }
+    }
+}

@@ -1,0 +1,98 @@
+/**
+ * Theme — Light and dark theme CSS custom properties.
+ */
+
+/* Light theme (default) */
+:root,
+html[data-theme="light"] {
+    --bg: #f0f2f5;
+    --bg-secondary: #ffffff;
+    --text: #1a1a2e;
+    --text-secondary: #555;
+    --text-muted: #888;
+    --accent: #4361ee;
+    --accent-hover: #3a56d4;
+    --card-bg: #ffffff;
+    --card-border: #e0e0e0;
+    --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+    --card-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.1);
+    --topbar-bg: #ffffff;
+    --topbar-border: #e0e0e0;
+    --tab-bg: transparent;
+    --tab-active-bg: var(--accent);
+    --tab-active-text: #ffffff;
+    --tab-hover-bg: #f0f2f5;
+    --item-bg: transparent;
+    --item-hover-bg: #f5f7ff;
+    --item-active-bg: #eef0ff;
+    --drag-over-bg: #e8f0fe;
+    --drag-over-border: var(--accent);
+    --danger: #e74c3c;
+    --danger-hover: #c0392b;
+    --input-bg: #ffffff;
+    --input-border: #ccc;
+    --input-focus-border: var(--accent);
+    --scrollbar-thumb: #ccc;
+    --scrollbar-track: transparent;
+    --edit-mode-bg: #fff8e1;
+    --edit-mode-border: #ffc107;
+}
+
+/* Dark theme */
+html[data-theme="dark"] {
+    --bg: #1a1a2e;
+    --bg-secondary: #16213e;
+    --text: #e0e0e0;
+    --text-secondary: #b0b0b0;
+    --text-muted: #777;
+    --accent: #5c7cfa;
+    --accent-hover: #4a6cf7;
+    --card-bg: #16213e;
+    --card-border: #2a2a4a;
+    --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+    --card-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.4);
+    --topbar-bg: #16213e;
+    --topbar-border: #2a2a4a;
+    --tab-bg: transparent;
+    --tab-active-bg: var(--accent);
+    --tab-active-text: #ffffff;
+    --tab-hover-bg: #1a1a2e;
+    --item-bg: transparent;
+    --item-hover-bg: #1a1a3e;
+    --item-active-bg: #22224a;
+    --drag-over-bg: #1a1a3e;
+    --drag-over-border: var(--accent);
+    --danger: #e74c3c;
+    --danger-hover: #ff6b6b;
+    --input-bg: #1a1a2e;
+    --input-border: #3a3a5a;
+    --input-focus-border: var(--accent);
+    --scrollbar-thumb: #3a3a5a;
+    --scrollbar-track: transparent;
+    --edit-mode-bg: #2a2a1a;
+    --edit-mode-border: #ffc107;
+}
+
+/* Theme toggle button */
+#theme-toggle {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    transition: background 0.2s, transform 0.1s;
+}
+
+#theme-toggle:hover {
+    background: var(--tab-hover-bg);
+    transform: scale(1.05);
+}
+
+#theme-toggle:active {
+    transform: scale(0.95);
+}
+
+html[data-theme="light"] .theme-icon-dark { display: none; }
+html[data-theme="dark"] .theme-icon-light { display: none; }

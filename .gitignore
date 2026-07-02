@@ -1,0 +1,14 @@
+# SQLite database
+data/
+
+# PHP session/cache
+*.cache
+*.log
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+PLAN.md

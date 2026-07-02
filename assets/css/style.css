@@ -1,0 +1,525 @@
+/**
+ * Start Page Dashboard — Main Styles
+ */
+
+/* Reset & Base */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.5;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+}
+::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 4px;
+}
+
+/* ===== Top Bar ===== */
+#topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--topbar-bg);
+    border-bottom: 1px solid var(--topbar-border);
+    padding: 8px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+#tabs-container {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+#tabs-container::-webkit-scrollbar {
+    display: none;
+}
+
+#tabs {
+    display: flex;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+.tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 8px 8px 0 0;
+    background: var(--tab-bg);
+    color: var(--text-secondary);
+    cursor: pointer;
+    border: 1px solid transparent;
+    border-bottom: none;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+    user-select: none;
+    max-width: 180px;
+}
+
+.tab:hover {
+    background: var(--tab-hover-bg);
+    color: var(--text);
+}
+
+.tab.active {
+    background: var(--tab-active-bg);
+    color: var(--tab-active-text);
+    font-weight: 600;
+}
+
+.tab .tab-delete {
+    display: none;
+    font-size: 11px;
+    opacity: 0.7;
+    margin-left: 2px;
+    line-height: 1;
+}
+
+.tab:hover .tab-delete {
+    display: inline;
+}
+
+.tab .tab-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tab .tab-name[contenteditable="true"] {
+    outline: none;
+    border-bottom: 1px dashed currentColor;
+    cursor: text;
+}
+
+#add-page-btn {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid var(--card-border);
+    background: var(--card-bg);
+    color: var(--text-secondary);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+    line-height: 1;
+}
+
+#add-page-btn:hover {
+    background: var(--tab-hover-bg);
+    color: var(--accent);
+    border-color: var(--accent);
+}
+
+#add-block-btn {
+    flex-shrink: 0;
+    padding: 6px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--card-border);
+    background: var(--card-bg);
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+#add-block-btn:hover {
+    background: var(--tab-hover-bg);
+    color: var(--accent);
+    border-color: var(--accent);
+}
+
+#topbar-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+#export-menu {
+    display: flex;
+    gap: 4px;
+}
+
+#export-menu button {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 6px;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--text-secondary);
+    transition: all 0.15s ease;
+}
+
+#export-menu button:hover {
+    background: var(--tab-hover-bg);
+    color: var(--text);
+    border-color: var(--accent);
+}
+
+/* ===== Masonry Grid ===== */
+#blocks-container {
+    padding: 16px;
+    columns: 5;
+    column-gap: 16px;
+    min-height: calc(100vh - 50px);
+}
+
+@media (max-width: 1600px) { #blocks-container { columns: 4; } }
+@media (max-width: 1200px) { #blocks-container { columns: 3; } }
+@media (max-width: 800px)  { #blocks-container { columns: 2; } }
+@media (max-width: 500px)  { #blocks-container { columns: 1; } }
+
+/* ===== Block Card ===== */
+.block {
+    break-inside: avoid;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    box-shadow: var(--card-shadow);
+    margin-bottom: 16px;
+    overflow: hidden;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
+}
+
+.block:hover {
+    box-shadow: var(--card-shadow-hover);
+}
+
+.block.dragging {
+    opacity: 0.4;
+    transform: scale(0.98);
+}
+
+.block.drag-over {
+    border-color: var(--drag-over-border);
+    background: var(--drag-over-bg);
+}
+
+/* Edit mode */
+.block.edit-mode {
+    border-color: var(--edit-mode-border);
+    background: var(--edit-mode-bg);
+}
+
+/* ===== Block Header ===== */
+.block-header {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    gap: 8px;
+    border-bottom: 1px solid var(--card-border);
+    background: var(--bg-secondary);
+}
+
+.block-drag-handle {
+    cursor: grab;
+    color: var(--text-muted);
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.15s;
+    flex-shrink: 0;
+    user-select: none;
+}
+
+.block:hover .block-drag-handle,
+.block.edit-mode .block-drag-handle {
+    opacity: 1;
+}
+
+.block-drag-handle:active {
+    cursor: grabbing;
+}
+
+.block-title {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text);
+    cursor: default;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.block-title[contenteditable="true"] {
+    outline: none;
+    cursor: text;
+    border-bottom: 1px dashed var(--accent);
+    padding-bottom: 1px;
+}
+
+.block-actions {
+    display: flex;
+    gap: 2px;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.block:hover .block-actions,
+.block.edit-mode .block-actions {
+    opacity: 1;
+}
+
+.block-actions button {
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    line-height: 1;
+}
+
+.block-actions button:hover {
+    background: var(--tab-hover-bg);
+    color: var(--text);
+}
+
+.block-actions .add-item-btn:hover {
+    color: var(--accent);
+}
+
+.block-actions .delete-block-btn:hover {
+    color: var(--danger);
+}
+
+/* ===== Block Items ===== */
+.block-items {
+    padding: 4px 0;
+}
+
+.block-item {
+    display: flex;
+    align-items: center;
+    padding: 6px 12px;
+    gap: 8px;
+    text-decoration: none;
+    color: var(--text);
+    transition: background 0.1s;
+    cursor: default;
+    position: relative;
+}
+
+.block-item:hover {
+    background: var(--item-hover-bg);
+}
+
+.block-item:active {
+    background: var(--item-active-bg);
+}
+
+.block-item.dragging {
+    opacity: 0.4;
+}
+
+.block-item.drag-over {
+    background: var(--drag-over-bg);
+    border-top: 2px solid var(--drag-over-border);
+}
+
+.item-drag-handle {
+    cursor: grab;
+    color: var(--text-muted);
+    font-size: 12px;
+    opacity: 0;
+    transition: opacity 0.15s;
+    flex-shrink: 0;
+    user-select: none;
+}
+
+.block-item:hover .item-drag-handle,
+.block.edit-mode .item-drag-handle {
+    opacity: 1;
+}
+
+.item-drag-handle:active {
+    cursor: grabbing;
+}
+
+.item-favicon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    border-radius: 2px;
+}
+
+.item-title {
+    flex: 1;
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.delete-item-btn {
+    display: none;
+    width: 20px;
+    height: 20px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 14px;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.block.edit-mode .delete-item-btn {
+    display: flex;
+}
+
+.delete-item-btn:hover {
+    background: rgba(231, 76, 60, 0.1);
+    color: var(--danger);
+}
+
+/* ===== Add Item Form ===== */
+.add-item-form {
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px;
+    gap: 6px;
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--card-border);
+}
+
+.add-item-form input {
+    padding: 6px 10px;
+    border: 1px solid var(--input-border);
+    border-radius: 6px;
+    font-size: 13px;
+    background: var(--input-bg);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.add-item-form input:focus {
+    border-color: var(--input-focus-border);
+}
+
+.add-item-actions {
+    display: flex;
+    gap: 4px;
+    justify-content: flex-end;
+}
+
+.add-item-actions button {
+    width: 26px;
+    height: 26px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+}
+
+.save-item-btn {
+    background: var(--accent);
+    color: white;
+}
+
+.save-item-btn:hover {
+    background: var(--accent-hover);
+}
+
+.cancel-item-btn {
+    background: var(--tab-hover-bg);
+    color: var(--text-secondary);
+}
+
+.cancel-item-btn:hover {
+    background: var(--danger);
+    color: white;
+}
+
+/* ===== Empty State ===== */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+}
+
+.empty-state h2 {
+    font-size: 18px;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.empty-state p {
+    font-size: 14px;
+}
+
+/* ===== Loading ===== */
+.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+/* ===== Animations ===== */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.block {
+    animation: fadeIn 0.2s ease;
+}
