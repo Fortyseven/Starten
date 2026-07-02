@@ -509,6 +509,7 @@ button {
 /* ===== Block Items ===== */
 .block-items {
     padding: 4px 0;
+    position: relative;
 }
 
 .block-item {
@@ -538,6 +539,31 @@ button {
 .block-item.drag-over {
     background: var(--drag-over-bg);
     border-top: 2px solid var(--drag-over-border);
+}
+
+/* Drop indicator — shows exact insertion position */
+.drop-indicator {
+    display: none;
+    height: 2px;
+    background: var(--drag-over-border);
+    border-radius: 1px;
+    pointer-events: none;
+    position: absolute;
+    left: 0;
+    right: 0;
+    z-index: 10;
+}
+
+.drop-indicator::before {
+    content: '';
+    display: block;
+    width: 8px;
+    height: 8px;
+    background: var(--drag-over-border);
+    border-radius: 50%;
+    position: absolute;
+    left: 6px;
+    top: -3px;
 }
 
 .item-drag-handle {

@@ -147,6 +147,9 @@ const Blocks = {
             itemsContainer.appendChild(itemEl);
         });
 
+        // Setup container-level drag-and-drop (once per block)
+        Items.setupContainer(itemsContainer);
+
         return blockEl;
     },
 

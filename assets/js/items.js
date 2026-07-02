@@ -6,10 +6,142 @@ const Items = {
     itemTemplate: null,
     addFormTemplate: null,
     dragState: null,
+    _setupContainers: new Set(),
 
     init() {
         this.itemTemplate = document.getElementById('item-template');
         this.addFormTemplate = document.getElementById('add-item-form');
+    },
+
+    /**
+     * Attach container-level drag-and-drop listeners once per block-items container.
+     * Call from blocks.js after rendering items.
+     */
+    setupContainer(container) {
+        if (this._setupContainers.has(container)) return;
+        this._setupContainers.add(container);
+
+        container.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            if (!this.dragState || this.dragState.type !== 'item') return;
+
+            const draggedId = this.dragState.id;
+            const items = [...container.querySelectorAll('.block-item')].filter(i => parseInt(i.dataset.id) !== draggedId);
+            let closestItem = null;
+            let position = null;
+            let minDistance = Infinity;
+
+            for (const item of items) {
+                const rect = item.getBoundingClientRect();
+                const midY = rect.top + rect.height / 2;
+                const distance = Math.abs(e.clientY - midY);
+
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closestItem = item;
+                    position = e.clientY < midY ? 'before' : 'after';
+                }
+            }
+
+            this._showDropIndicator(container, closestItem, position);
+        });
+
+        container.addEventListener('dragleave', (e) => {
+            // Only hide if actually leaving the container
+            if (!container.contains(e.relatedTarget)) {
+                this._hideDropIndicator();
+                const blockEl = container.closest('.block');
+                if (blockEl) blockEl.classList.remove('drag-over');
+            }
+        });
+
+        container.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            // Read stored state BEFORE clearing it
+            const targetItemId = this._dropTargetId;
+            const position = this._dropPosition;
+            this._dropTargetId = null;
+            this._dropPosition = null;
+            this._hideDropIndicator();
+
+            const blockEl = container.closest('.block');
+            if (blockEl) blockEl.classList.remove('drag-over');
+
+            if (!this.dragState || this.dragState.type !== 'item') return;
+
+            const { id: movedId, blockId: fromBlockId } = this.dragState;
+            const toBlockId = parseInt(blockEl.dataset.id);
+
+            if (fromBlockId === toBlockId) {
+                // Same-block reorder
+                if (targetItemId) {
+                    this.moveItem(movedId, fromBlockId, toBlockId, targetItemId, position);
+                }
+                // If no target item (empty block or indicator lost), do nothing
+            } else {
+                // Cross-block move
+                if (targetItemId) {
+                    this.moveItem(movedId, fromBlockId, toBlockId, targetItemId, position);
+                } else {
+                    // Drop at end of target block
+                    this.moveItemToBlock(movedId, toBlockId);
+                }
+            }
+        });
+    },
+
+    /**
+     * Show the visual drop indicator at the calculated position.
+     */
+    _showDropIndicator(container, targetItem, position) {
+        let indicator = container.querySelector('.drop-indicator');
+        if (!indicator) {
+            indicator = document.createElement('div');
+            indicator.className = 'drop-indicator';
+            container.appendChild(indicator);
+        }
+
+        if (!targetItem) {
+            // No items in block — show at bottom
+            indicator.style.display = 'block';
+            indicator.style.position = 'absolute';
+            indicator.style.bottom = '0';
+            indicator.style.top = 'auto';
+            this._dropTargetId = null;
+            this._dropPosition = 'after';
+            return;
+        }
+
+        const containerRect = container.getBoundingClientRect();
+        const itemRect = targetItem.getBoundingClientRect();
+
+        indicator.style.display = 'block';
+        indicator.style.position = 'absolute';
+        indicator.style.left = '0';
+        indicator.style.right = '0';
+
+        if (position === 'before') {
+            indicator.style.top = (itemRect.top - containerRect.top) + 'px';
+        } else {
+            indicator.style.top = (itemRect.bottom - containerRect.top) + 'px';
+        }
+
+        this._dropTargetId = parseInt(targetItem.dataset.id);
+        this._dropPosition = position;
+    },
+
+    /**
+     * Hide the drop indicator.
+     */
+    _hideDropIndicator() {
+        const indicator = document.querySelector('.drop-indicator');
+        if (indicator) indicator.remove();
+        this._dropTargetId = null;
+        this._dropPosition = null;
     },
 
     createItemElement(item) {
@@ -19,22 +151,43 @@ const Items = {
         itemEl.dataset.id = item.id;
         itemEl.dataset.blockId = item.block_id;
 
-        // Set URL and favicon
-        if (item.url) {
-            itemEl.href = item.url;
+        // Store URL for click navigation
+        const url = item.url || null;
+        if (url) {
+            itemEl.dataset.url = url;
+            itemEl.style.cursor = 'pointer';
             const favicon = itemEl.querySelector('.item-favicon');
-            favicon.src = faviconUrl(item.url);
+            favicon.src = faviconUrl(url);
             favicon.onerror = () => {
                 favicon.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="%23ccc"/></svg>';
             };
+            itemEl.tabIndex = 0; // Make focusable for keyboard access
         } else {
-            itemEl.removeAttribute('href');
             itemEl.style.cursor = 'default';
         }
 
         // Title
         const titleEl = itemEl.querySelector('.item-title');
-        titleEl.textContent = item.title || (item.url ? extractDomain(item.url) : 'Untitled');
+        titleEl.textContent = item.title || (url ? extractDomain(url) : 'Untitled');
+
+        // Click to navigate (for items with URL)
+        if (url) {
+            itemEl.addEventListener('click', (e) => {
+                // Don't navigate if clicking buttons
+                if (e.target.closest('.item-actions')) return;
+                // Don't navigate if this was a drag
+                if (e.detail === 0 && itemEl.classList.contains('dragging')) return;
+                window.open(url, '_blank', 'noopener');
+            });
+
+            // Keyboard: Enter to navigate
+            itemEl.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    window.open(url, '_blank', 'noopener');
+                }
+            });
+        }
 
         // Edit button
         itemEl.querySelector('.item-edit-btn').addEventListener('click', (e) => {
@@ -50,79 +203,41 @@ const Items = {
             this.deleteItem(item.id);
         });
 
-        // Drag-and-drop for items
+        // --- Drag-and-drop for items ---
+
         itemEl.addEventListener('dragstart', (e) => {
-            // Only drag items, not the block itself
+            // Don't drag from block-level drag handle
             if (e.target.closest('.block-drag-handle')) return;
             e.stopPropagation();
 
-            this.dragState = { type: 'item', id: item.id, blockId: item.block_id, el: itemEl };
+            this.dragState = { type: 'item', id: item.id, blockId: item.block_id };
             itemEl.classList.add('dragging');
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setData('text/plain', `item:${item.id}`);
+
+            // Also highlight the source block
+            const blockEl = itemEl.closest('.block');
+            if (blockEl) blockEl.classList.add('drag-over');
         });
 
         itemEl.addEventListener('dragend', () => {
             itemEl.classList.remove('dragging');
-            document.querySelectorAll('.block-item.drag-over').forEach(el => el.classList.remove('drag-over'));
+            this._hideDropIndicator();
             document.querySelectorAll('.block.drag-over').forEach(el => el.classList.remove('drag-over'));
             this.dragState = null;
         });
 
+        // Per-item dragover: allow drop, let event bubble to container for positioning
         itemEl.addEventListener('dragover', (e) => {
             e.preventDefault();
-            e.stopPropagation();
-            if (this.dragState && this.dragState.type === 'item') {
-                itemEl.classList.add('drag-over');
-            }
+            // Don't stopPropagation — let container handler position the drop indicator
         });
 
-        itemEl.addEventListener('dragleave', () => {
-            itemEl.classList.remove('drag-over');
-        });
-
+        // Per-item drop: allow drop, let event bubble to container for processing
         itemEl.addEventListener('drop', (e) => {
             e.preventDefault();
-            e.stopPropagation();
-            itemEl.classList.remove('drag-over');
-
-            if (this.dragState && this.dragState.type === 'item' && this.dragState.id !== item.id) {
-                this.moveItem(this.dragState.id, this.dragState.blockId, item.blockId, item.id);
-            }
+            // Don't stopPropagation — let container handler process the move
         });
-
-        // Also make the items container a drop zone for inter-block moves
-        const parentContainer = itemEl.parentElement;
-        if (parentContainer) {
-            parentContainer.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                if (this.dragState && this.dragState.type === 'item') {
-                    const blockEl = parentContainer.closest('.block');
-                    if (blockEl && parseInt(blockEl.dataset.id) !== this.dragState.blockId) {
-                        blockEl.classList.add('drag-over');
-                    }
-                }
-            });
-
-            parentContainer.addEventListener('dragleave', (e) => {
-                const blockEl = parentContainer.closest('.block');
-                if (blockEl) blockEl.classList.remove('drag-over');
-            });
-
-            parentContainer.addEventListener('drop', (e) => {
-                e.preventDefault();
-                const blockEl = parentContainer.closest('.block');
-                if (blockEl) blockEl.classList.remove('drag-over');
-
-                if (this.dragState && this.dragState.type === 'item') {
-                    const targetBlockId = parseInt(blockEl.dataset.id);
-                    if (targetBlockId !== this.dragState.blockId) {
-                        // Drop at end of block
-                        this.moveItemToBlock(this.dragState.id, targetBlockId);
-                    }
-                }
-            });
-        }
 
         return itemEl;
     },
@@ -267,7 +382,7 @@ const Items = {
         this._editItem = null;
     },
 
-    async moveItem(movedId, fromBlockId, toBlockId, beforeId) {
+    async moveItem(movedId, fromBlockId, toBlockId, targetItemId, position = 'before') {
         // Get all items for affected blocks and reorder
         const blocks = AppState.blocks;
         const fromBlock = blocks.find(b => b.id === fromBlockId);
@@ -284,10 +399,11 @@ const Items = {
             targetItems.splice(movedIdx, 1);
         }
 
-        // Find the index before which to insert
-        const beforeIdx = targetItems.findIndex(i => i.id === beforeId);
-        if (beforeIdx !== -1) {
-            targetItems.splice(beforeIdx, 0, { id: movedId });
+        // Find the index before/after which to insert
+        const targetIdx = targetItems.findIndex(i => i.id === targetItemId);
+        if (targetIdx !== -1) {
+            const insertIdx = position === 'before' ? targetIdx : targetIdx + 1;
+            targetItems.splice(insertIdx, 0, { id: movedId });
         } else {
             targetItems.push({ id: movedId });
         }
@@ -317,23 +433,32 @@ const Items = {
 
     async moveItemToBlock(itemId, targetBlockId) {
         // Move item to the end of the target block
-        const blocks = AppState.blocks;
-        const targetBlock = blocks.find(b => b.id === targetBlockId);
+        const sourceBlock = AppState.blocks.find(b => b.items?.some(i => i.id === itemId));
+        if (!sourceBlock) return;
+
+        const targetBlock = AppState.blocks.find(b => b.id === targetBlockId);
         if (!targetBlock) return;
 
         const targetItems = [...(targetBlock.items || [])];
-        const beforeId = targetItems.length > 0 ? targetItems[targetItems.length - 1].id : null;
+        targetItems.push({ id: itemId });
 
-        if (beforeId) {
-            await this.moveItem(itemId, parseInt(targetBlockId === AppState.blocks.find(b => b.items?.some(i => i.id === itemId)) ? targetBlockId : 0), targetBlockId, beforeId);
-        } else {
-            // Empty block, just move it
-            const sourceBlock = AppState.blocks.find(b => b.items?.some(i => i.id === itemId));
-            const moves = [{ id: itemId, block_id: targetBlockId, sort_order: 0 }];
-            if (sourceBlock) {
-                await api('items:reorder', { moves });
-                await Blocks.load();
-            }
-        }
+        const moves = targetItems.map((item, idx) => ({
+            id: item.id,
+            block_id: targetBlockId,
+            sort_order: idx,
+        }));
+
+        // Also renumber source block
+        const sourceItems = (sourceBlock.items || []).filter(i => i.id !== itemId);
+        sourceItems.forEach((item, idx) => {
+            moves.push({
+                id: item.id,
+                block_id: sourceBlock.id,
+                sort_order: idx,
+            });
+        });
+
+        await api('items:reorder', { moves });
+        await Blocks.load();
     },
 };

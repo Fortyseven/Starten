@@ -79,7 +79,7 @@ class Render
 
         <!-- Item template (hidden, cloned by JS) -->
         <template id="item-template">
-            <a class="block-item" draggable="true" href="#" target="_blank" rel="noopener">
+            <div class="block-item" draggable="true" role="link">
                 <span class="item-drag-handle" title="Drag to reorder">⠿</span>
                 <img class="item-favicon" src="" alt="" width="16" height="16">
                 <span class="item-title"></span>
@@ -87,7 +87,7 @@ class Render
                     <button class="item-edit-btn" title="Edit" aria-label="Edit">✎</button>
                     <button class="item-delete-btn" title="Delete" aria-label="Delete">×</button>
                 </span>
-            </a>
+            </div>
         </template>
 
         <!-- Add item form template -->
