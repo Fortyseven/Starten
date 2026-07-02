@@ -4,7 +4,7 @@
 
 // Shared state
 const AppState = {
-    currentPageId: null,
+    currentPageId: sessionStorage.getItem('currentPageId') ? parseInt(sessionStorage.getItem('currentPageId'), 10) : null,
     pages: [],
     blocks: [],
 };

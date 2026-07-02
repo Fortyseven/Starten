@@ -224,6 +224,7 @@ const Tabs = {
 
     async select(pageId) {
         AppState.currentPageId = pageId;
+        sessionStorage.setItem('currentPageId', pageId);
         this.render();
         await Blocks.load();
         this.applyPageBackground(pageId);
