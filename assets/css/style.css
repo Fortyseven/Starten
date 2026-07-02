@@ -143,7 +143,7 @@ body {
     border: 1px solid var(--card-border);
     border-radius: 8px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-    min-width: 150px;
+    width: 170px;
     padding: 4px;
     z-index: 200;
     flex-direction: column;
@@ -422,6 +422,7 @@ body {
 }
 
 .block-actions {
+    position: relative;
     display: flex;
     gap: 2px;
     opacity: 0;
@@ -433,7 +434,7 @@ body {
     opacity: 1;
 }
 
-.block-actions button {
+.block-actions button:not(.block-dropdown-item) {
     width: 24px;
     height: 24px;
     border: none;
@@ -458,8 +459,55 @@ body {
     color: var(--accent);
 }
 
-.block-actions .delete-block-btn:hover {
-    color: var(--danger);
+.block-actions .block-kebab {
+    font-size: 14px;
+    letter-spacing: 1px;
+}
+
+/* ===== Block Dropdown ===== */
+.block-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 2px);
+    right: 0;
+    background: var(--bg-secondary);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    width: 170px;
+    padding: 4px;
+    z-index: 200;
+}
+
+.block-dropdown.open {
+    display: block;
+}
+
+.block-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.1s ease;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.block-dropdown-item:hover {
+    background: var(--tab-hover-bg);
+    color: var(--accent);
+}
+
+.block-dropdown-item-danger:hover {
+    color: #e63946;
 }
 
 /* ===== Block Items ===== */

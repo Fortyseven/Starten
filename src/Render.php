@@ -58,8 +58,12 @@ class Render
                     <h2 class="block-title"></h2>
                     <div class="block-actions">
                         <button class="add-item-btn" title="Add link" aria-label="Add link">+</button>
-                        <button class="edit-mode-btn" title="Edit mode" aria-label="Edit mode">✎</button>
-                        <button class="delete-block-btn" title="Delete block" aria-label="Delete block">×</button>
+                        <button class="block-kebab" title="Block actions" aria-label="Block actions" aria-haspopup="true" aria-expanded="false">⋮</button>
+                        <div class="block-dropdown" role="menu">
+                            <button class="block-dropdown-item" role="menuitem">✏️ Rename</button>
+                            <button class="block-dropdown-item" role="menuitem">✎ Edit mode</button>
+                            <button class="block-dropdown-item block-dropdown-item-danger" role="menuitem">🗑 Delete block</button>
+                        </div>
                     </div>
                 </div>
                 <div class="block-items"></div>

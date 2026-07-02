@@ -13,8 +13,18 @@ const Blocks = {
 
         const addBlockBtn = document.getElementById('add-block-btn');
         if (addBlockBtn) {
-            addBlockBtn.addEventListener('click', () => this.addBlock());
+            addBlockBtn.addEventListener('click', () => {
+                this.closeBlockMenus();
+                this.addBlock();
+            });
         }
+
+        // Close block dropdowns when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.block-kebab') && !e.target.closest('.block-dropdown')) {
+                this.closeBlockMenus();
+            }
+        });
     },
 
     async load() {
@@ -69,15 +79,32 @@ const Blocks = {
             this.renameBlockInline(block.id, titleEl);
         });
 
-        // Delete block
-        blockEl.querySelector('.delete-block-btn').addEventListener('click', () => {
-            this.deleteBlock(block.id);
+        // Kebab menu
+        const kebabBtn = blockEl.querySelector('.block-kebab');
+        const dropdown = blockEl.querySelector('.block-dropdown');
+        kebabBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.toggleBlockMenu(kebabBtn, dropdown);
         });
 
-        // Edit mode toggle
-        const editBtn = blockEl.querySelector('.edit-mode-btn');
-        editBtn.addEventListener('click', () => {
+        // Dropdown: Rename
+        dropdown.querySelector('.block-dropdown-item:nth-child(1)').addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.closeBlockMenus();
+            this.renameBlockInline(block.id, titleEl);
+        });
+
+        // Dropdown: Edit mode
+        dropdown.querySelector('.block-dropdown-item:nth-child(2)').addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.closeBlockMenus();
             this.toggleEditMode(blockEl, block.id);
+        });
+
+        // Dropdown: Delete
+        dropdown.querySelector('.block-dropdown-item:nth-child(3)').addEventListener('click', () => {
+            this.closeBlockMenus();
+            this.deleteBlock(block.id);
         });
 
         // Add item button
@@ -190,6 +217,45 @@ const Blocks = {
         if (result && result.block) {
             await this.load();
         }
+    },
+
+    toggleBlockMenu(kebabBtn, dropdown) {
+        const isOpen = dropdown.classList.contains('open');
+        this.closeBlockMenus();
+        if (!isOpen) {
+            dropdown.classList.add('open');
+            kebabBtn.setAttribute('aria-expanded', 'true');
+
+            // Allow dropdown to escape .block overflow:hidden
+            const block = kebabBtn.closest('.block');
+            if (block) block.style.overflow = 'visible';
+
+            // Reposition if overflowing viewport
+            requestAnimationFrame(() => {
+                const rect = dropdown.getBoundingClientRect();
+                if (rect.right > window.innerWidth) {
+                    dropdown.style.right = '0';
+                    dropdown.style.left = 'auto';
+                }
+                if (rect.left < 0) {
+                    dropdown.style.left = '0';
+                    dropdown.style.right = 'auto';
+                }
+            });
+        }
+    },
+
+    closeBlockMenus() {
+        document.querySelectorAll('.block-dropdown.open').forEach(d => {
+            d.classList.remove('open');
+            d.style.right = '';
+            d.style.left = '';
+            const block = d.closest('.block');
+            if (block) block.style.overflow = '';
+        });
+        document.querySelectorAll('.block-kebab[aria-expanded="true"]').forEach(b =>
+            b.setAttribute('aria-expanded', 'false')
+        );
     },
 
     toggleEditMode(blockEl, blockId) {
