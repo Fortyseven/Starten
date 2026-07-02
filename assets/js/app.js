@@ -11,6 +11,14 @@ const AppState = {
 };
 
 /**
+ * Get the CSRF token from the meta tag.
+ */
+function csrfToken() {
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    return meta ? meta.getAttribute('content') : '';
+}
+
+/**
  * API helper — POST JSON to index.php?action=...
  */
 async function api(action, data = {}) {
@@ -18,7 +26,10 @@ async function api(action, data = {}) {
     try {
         const response = await fetch(url, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': csrfToken(),
+            },
             body: JSON.stringify(data),
         });
         if (!response.ok) {

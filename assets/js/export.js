@@ -98,7 +98,10 @@ const Export = {
 
                 const response = await fetch('index.php?action=export:import', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': csrfToken(),
+                    },
                     body: JSON.stringify(json),
                 });
 

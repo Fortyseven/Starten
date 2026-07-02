@@ -50,6 +50,9 @@ class Router
             return;
         }
 
+        // Validate CSRF token on all API requests
+        \Csrf::require();
+
         $handler = new $handlerClass();
         if (!method_exists($handler, $subAction)) {
             $this->jsonError("Unknown action '{$subAction}' on '{$handlerName}'", 404);

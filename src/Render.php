@@ -12,12 +12,17 @@ class Render
     {
         $appName = $GLOBALS['app_name'] ?? 'Start Page';
 
+        // Generate CSRF token and set cookie
+        $csrfToken = \Csrf::generate();
+        \Csrf::setCookie($csrfToken);
+
         echo <<<HTML
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{$csrfToken}">
     <title>{$appName}</title>
     <link rel="stylesheet" href="assets/css/theme.css">
     <link rel="stylesheet" href="assets/css/style.css">
