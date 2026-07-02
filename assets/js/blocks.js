@@ -94,15 +94,8 @@ const Blocks = {
             this.renameBlockInline(block.id, titleEl);
         });
 
-        // Dropdown: Edit mode
-        dropdown.querySelector('.block-dropdown-item:nth-child(2)').addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.closeBlockMenus();
-            this.toggleEditMode(blockEl, block.id);
-        });
-
         // Dropdown: Delete
-        dropdown.querySelector('.block-dropdown-item:nth-child(3)').addEventListener('click', () => {
+        dropdown.querySelector('.block-dropdown-item:nth-child(2)').addEventListener('click', () => {
             this.closeBlockMenus();
             this.deleteBlock(block.id);
         });
@@ -264,20 +257,6 @@ const Blocks = {
         document.querySelectorAll('.block-kebab[aria-expanded="true"]').forEach(b =>
             b.setAttribute('aria-expanded', 'false')
         );
-    },
-
-    toggleEditMode(blockEl, blockId) {
-        const wasEditMode = blockEl.classList.contains('edit-mode');
-
-        // Clear all edit modes first
-        document.querySelectorAll('.block.edit-mode').forEach(el => el.classList.remove('edit-mode'));
-
-        if (!wasEditMode) {
-            blockEl.classList.add('edit-mode');
-            AppState.editModeBlockId = blockId;
-        } else {
-            AppState.editModeBlockId = null;
-        }
     },
 
     async reorderBlocks(movedId, targetId) {

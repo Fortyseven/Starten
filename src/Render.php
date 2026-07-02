@@ -69,7 +69,6 @@ class Render
                         <button class="block-kebab" title="Block actions" aria-label="Block actions" aria-haspopup="true" aria-expanded="false">⋮</button>
                         <div class="block-dropdown" role="menu">
                             <button class="block-dropdown-item" role="menuitem">✏️ Rename</button>
-                            <button class="block-dropdown-item" role="menuitem">✎ Edit mode</button>
                             <button class="block-dropdown-item block-dropdown-item-danger" role="menuitem">🗑 Delete block</button>
                         </div>
                     </div>
@@ -84,7 +83,10 @@ class Render
                 <span class="item-drag-handle" title="Drag to reorder">⠿</span>
                 <img class="item-favicon" src="" alt="" width="16" height="16">
                 <span class="item-title"></span>
-                <button class="delete-item-btn" title="Remove" aria-label="Remove">×</button>
+                <span class="item-actions">
+                    <button class="item-edit-btn" title="Edit" aria-label="Edit">✎</button>
+                    <button class="item-delete-btn" title="Delete" aria-label="Delete">×</button>
+                </span>
             </a>
         </template>
 
@@ -99,6 +101,29 @@ class Render
                 </div>
             </div>
         </template>
+
+        <!-- Item edit modal -->
+        <div id="item-edit-overlay" class="item-edit-overlay"></div>
+        <div id="item-edit-modal" class="item-edit-modal">
+            <div class="item-edit-header">
+                <h2>Edit Link</h2>
+                <button id="item-edit-close" class="item-edit-close" aria-label="Close">&times;</button>
+            </div>
+            <div class="item-edit-body">
+                <label class="item-edit-label">
+                    URL
+                    <input type="text" id="item-edit-url" placeholder="https://example.com">
+                </label>
+                <label class="item-edit-label">
+                    Title
+                    <input type="text" id="item-edit-title" placeholder="Link title">
+                </label>
+            </div>
+            <div class="item-edit-footer">
+                <button id="item-edit-cancel" class="item-edit-btn item-edit-btn-secondary">Cancel</button>
+                <button id="item-edit-save" class="item-edit-btn item-edit-btn-primary">Save</button>
+            </div>
+        </div>
 
         <!-- Background editor slide-in panel -->
         <div id="bg-panel-overlay" class="bg-panel-overlay bg-hidden"></div>

@@ -370,12 +370,6 @@ button {
     background: var(--drag-over-bg);
 }
 
-/* Edit mode */
-.block.edit-mode {
-    border-color: var(--edit-mode-border);
-    background: var(--edit-mode-bg);
-}
-
 /* ===== Block Header ===== */
 .block-header {
     display: flex;
@@ -396,8 +390,7 @@ button {
     user-select: none;
 }
 
-.block:hover .block-drag-handle,
-.block.edit-mode .block-drag-handle {
+.block:hover .block-drag-handle {
     opacity: 1;
 }
 
@@ -433,8 +426,7 @@ button {
     transition: opacity 0.15s;
 }
 
-.block:hover .block-actions,
-.block.edit-mode .block-actions {
+.block:hover .block-actions {
     opacity: 1;
 }
 
@@ -558,8 +550,7 @@ button {
     user-select: none;
 }
 
-.block-item:hover .item-drag-handle,
-.block.edit-mode .item-drag-handle {
+.block-item:hover .item-drag-handle {
     opacity: 1;
 }
 
@@ -582,28 +573,43 @@ button {
     white-space: nowrap;
 }
 
-.delete-item-btn {
-    display: none;
-    width: 20px;
-    height: 20px;
+/* Item action buttons (edit + delete) — appear on hover */
+.item-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    flex-shrink: 0;
+}
+
+.block-item:hover .item-actions {
+    opacity: 1;
+}
+
+.item-edit-btn,
+.item-delete-btn {
+    width: 22px;
+    height: 22px;
     border: none;
     border-radius: 4px;
     background: transparent;
     color: var(--text-muted);
     cursor: pointer;
-    font-size: 14px;
+    font-size: 12px;
+    display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.15s;
-    flex-shrink: 0;
     line-height: 1;
 }
 
-.block.edit-mode .delete-item-btn {
-    display: flex;
+.item-edit-btn:hover {
+    background: var(--tab-hover-bg);
+    color: var(--accent);
 }
 
-.delete-item-btn:hover {
+.item-delete-btn:hover {
     background: rgba(231, 76, 60, 0.1);
     color: var(--danger);
 }
@@ -669,6 +675,158 @@ button {
 .cancel-item-btn:hover {
     background: var(--danger);
     color: white;
+}
+
+/* ===== Item Edit Modal ===== */
+
+/* Overlay backdrop */
+.item-edit-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 300;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+}
+
+.item-edit-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Modal container */
+.item-edit-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.95);
+    width: 420px;
+    max-width: 90vw;
+    background: var(--bg-secondary);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    z-index: 301;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+}
+
+.item-edit-modal.open {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+/* Modal header */
+.item-edit-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--card-border);
+    flex-shrink: 0;
+}
+
+.item-edit-header h2 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.item-edit-close {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+}
+
+.item-edit-close:hover {
+    background: var(--tab-hover-bg);
+    color: var(--text);
+}
+
+/* Modal body */
+.item-edit-body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.item-edit-label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.item-edit-label input {
+    padding: 8px 12px;
+    border: 1px solid var(--input-border);
+    border-radius: 6px;
+    font-size: 13px;
+    background: var(--input-bg);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.item-edit-label input:focus {
+    border-color: var(--accent);
+}
+
+/* Modal footer */
+.item-edit-footer {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    padding: 14px 20px;
+    border-top: 1px solid var(--card-border);
+    flex-shrink: 0;
+}
+
+.item-edit-btn {
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid var(--card-border);
+}
+
+.item-edit-btn-secondary {
+    background: var(--card-bg);
+    color: var(--text-secondary);
+}
+
+.item-edit-btn-secondary:hover {
+    background: var(--tab-hover-bg);
+    color: var(--text);
+}
+
+.item-edit-btn-primary {
+    background: var(--accent);
+    color: #ffffff;
+    border-color: var(--accent);
+}
+
+.item-edit-btn-primary:hover {
+    background: var(--accent-hover);
 }
 
 /* ===== Empty State ===== */

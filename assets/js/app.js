@@ -7,7 +7,6 @@ const AppState = {
     currentPageId: null,
     pages: [],
     blocks: [],
-    editModeBlockId: null,
 };
 
 /**

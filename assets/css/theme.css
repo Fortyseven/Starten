@@ -34,8 +34,6 @@ html[data-theme="light"] {
     --input-focus-border: var(--accent);
     --scrollbar-thumb: #ccc;
     --scrollbar-track: transparent;
-    --edit-mode-bg: #fff8e1;
-    --edit-mode-border: #ffc107;
 }
 
 /* Dark theme */
@@ -69,8 +67,6 @@ html[data-theme="dark"] {
     --input-focus-border: var(--accent);
     --scrollbar-thumb: #3a3a5a;
     --scrollbar-track: transparent;
-    --edit-mode-bg: #2a2a1a;
-    --edit-mode-border: #ffc107;
 }
 
 /* Theme toggle button */
