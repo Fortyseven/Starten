@@ -56,12 +56,7 @@ body {
     align-items: center;
     gap: 4px;
     flex: 1;
-    overflow-x: auto;
-    scrollbar-width: none;
-}
-
-#tabs-container::-webkit-scrollbar {
-    display: none;
+    overflow: visible;
 }
 
 #tabs {
@@ -71,6 +66,7 @@ body {
 }
 
 .tab {
+    position: relative;
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -100,21 +96,88 @@ body {
     font-weight: 600;
 }
 
-.tab .tab-delete {
-    display: none;
-    font-size: 11px;
-    opacity: 0.7;
-    margin-left: 2px;
-    line-height: 1;
-}
-
-.tab:hover .tab-delete {
-    display: inline;
-}
-
 .tab .tab-name {
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+/* ===== Tab Kebab Menu ===== */
+.tab .tab-kebab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    opacity: 0;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+
+.tab:hover .tab-kebab,
+.tab.active .tab-kebab {
+    opacity: 0.7;
+}
+
+.tab .tab-kebab:hover,
+.tab .tab-kebab[aria-expanded="true"] {
+    opacity: 1;
+    background: var(--tab-hover-bg);
+    color: var(--text);
+}
+
+/* ===== Tab Dropdown ===== */
+.tab-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 2px);
+    right: 0;
+    background: var(--bg-secondary);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    min-width: 150px;
+    padding: 4px;
+    z-index: 200;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.tab-dropdown.open {
+    display: flex;
+}
+
+.tab-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.1s ease;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.tab-dropdown-item:hover {
+    background: var(--tab-hover-bg);
+    color: var(--accent);
+}
+
+.tab-dropdown-item-danger:hover {
+    color: #e63946;
 }
 
 .tab .tab-name[contenteditable="true"] {
@@ -591,26 +654,6 @@ body {
 
 .block {
     animation: fadeIn 0.2s ease;
-}
-
-/* ===== Tab Edit Background Button ===== */
-.tab .tab-edit-bg {
-    font-size: 12px;
-    opacity: 0.7;
-    margin-left: 2px;
-    line-height: 1;
-    cursor: pointer;
-    transition: opacity 0.15s;
-}
-
-.tab:hover .tab-edit-bg,
-.tab.active .tab-edit-bg {
-    opacity: 1;
-}
-
-.tab .tab-edit-bg:hover {
-    opacity: 1;
-    transform: scale(1.15);
 }
 
 /* ===== Background Editor Slide-in Panel ===== */

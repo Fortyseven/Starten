@@ -18,7 +18,17 @@ const Tabs = {
         await this.load();
 
         // Add page button
-        document.getElementById('add-page-btn').addEventListener('click', () => this.addPage());
+        document.getElementById('add-page-btn').addEventListener('click', () => {
+            this.closeTabMenus();
+            this.addPage();
+        });
+
+        // Close tab dropdowns when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.tab-kebab') && !e.target.closest('.tab-dropdown')) {
+                this.closeTabMenus();
+            }
+        });
 
         // Background panel event listeners
         this.initBackgroundPanel();
@@ -107,32 +117,55 @@ const Tabs = {
             nameSpan.className = 'tab-name';
             nameSpan.textContent = page.name;
 
-            const deleteBtn = document.createElement('span');
-            deleteBtn.className = 'tab-delete';
-            deleteBtn.textContent = '×';
-            deleteBtn.addEventListener('click', (e) => {
+            // Kebab menu button
+            const kebabBtn = document.createElement('button');
+            kebabBtn.className = 'tab-kebab';
+            kebabBtn.textContent = '⋮';
+            kebabBtn.title = 'Page actions';
+            kebabBtn.setAttribute('aria-haspopup', 'true');
+            kebabBtn.setAttribute('aria-expanded', 'false');
+            kebabBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
+                this.toggleTabMenu(kebabBtn, dropdown, page.id);
+            });
+
+            // Dropdown menu
+            const dropdown = document.createElement('div');
+            dropdown.className = 'tab-dropdown';
+            dropdown.setAttribute('role', 'menu');
+
+            const editBgItem = document.createElement('button');
+            editBgItem.className = 'tab-dropdown-item';
+            editBgItem.setAttribute('role', 'menuitem');
+            editBgItem.innerHTML = '🎨 Edit background';
+            editBgItem.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.closeTabMenus();
+                this.editBackground(page.id);
+            });
+
+            const deleteItem = document.createElement('button');
+            deleteItem.className = 'tab-dropdown-item tab-dropdown-item-danger';
+            deleteItem.setAttribute('role', 'menuitem');
+            deleteItem.innerHTML = '🗑 Delete page';
+            deleteItem.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.closeTabMenus();
                 this.deletePage(page.id);
             });
 
-            tab.appendChild(nameSpan);
-            tab.appendChild(deleteBtn);
+            dropdown.appendChild(editBgItem);
+            dropdown.appendChild(deleteItem);
 
-            // Edit background button — only on active tab
-            if (page.id === AppState.currentPageId) {
-                const editBtn = document.createElement('span');
-                editBtn.className = 'tab-edit-bg';
-                editBtn.textContent = '🎨';
-                editBtn.title = 'Edit background';
-                editBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    this.editBackground(page.id);
-                });
-                tab.appendChild(editBtn);
-            }
+            tab.appendChild(nameSpan);
+            tab.appendChild(kebabBtn);
+            tab.appendChild(dropdown);
 
             // Click to switch
-            tab.addEventListener('click', () => this.select(page.id));
+            tab.addEventListener('click', () => {
+                this.closeTabMenus();
+                this.select(page.id);
+            });
 
             // Double-click to rename
             nameSpan.addEventListener('dblclick', (e) => {
@@ -142,6 +175,40 @@ const Tabs = {
 
             this.container.appendChild(tab);
         });
+    },
+
+    toggleTabMenu(kebabBtn, dropdown, pageId) {
+        const isOpen = dropdown.classList.contains('open');
+        this.closeTabMenus();
+        if (!isOpen) {
+            dropdown.classList.add('open');
+            kebabBtn.setAttribute('aria-expanded', 'true');
+
+            // Reposition if overflowing viewport
+            requestAnimationFrame(() => {
+                const rect = dropdown.getBoundingClientRect();
+                const viewportWidth = window.innerWidth;
+                if (rect.right > viewportWidth) {
+                    // Align dropdown's right edge to the tab's right edge
+                    dropdown.style.right = '0';
+                    dropdown.style.left = 'auto';
+                }
+                if (rect.left < 0) {
+                    // Align dropdown's left edge to the tab's left edge
+                    dropdown.style.left = '0';
+                    dropdown.style.right = 'auto';
+                }
+            });
+        }
+    },
+
+    closeTabMenus() {
+        this.container.querySelectorAll('.tab-dropdown.open').forEach(d => {
+            d.classList.remove('open');
+            d.style.right = '';
+            d.style.left = '';
+        });
+        this.container.querySelectorAll('.tab-kebab[aria-expanded="true"]').forEach(b => b.setAttribute('aria-expanded', 'false'));
     },
 
     async select(pageId) {
