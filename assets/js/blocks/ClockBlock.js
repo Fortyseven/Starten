@@ -221,6 +221,14 @@ class ClockBlock extends BlockBase {
         // Collect pending additions
         const pendingTimezones = [...this.config.timezones];
 
+        // Re-render the entire timezone list from pendingTimezones
+        const reRenderList = () => {
+            timezoneList.innerHTML = '';
+            pendingTimezones.forEach(tz => {
+                this._addTimezoneItem(timezoneList, tz);
+            });
+        };
+
         // Event: Remove timezone
         timezoneList.addEventListener('click', (e) => {
             const removeBtn = e.target.closest('.clock-timezone-remove');
@@ -234,6 +242,9 @@ class ClockBlock extends BlockBase {
                 }
             }
         });
+
+        // Event: Drag-and-drop reordering
+        this._initTimezoneDragDrop(timezoneList, { timezones: pendingTimezones, render: reRenderList });
 
         // Event: Add timezone
         const addBtn = modal.querySelector('.clock-add-btn');
@@ -344,12 +355,91 @@ class ClockBlock extends BlockBase {
         const item = document.createElement('div');
         item.className = 'clock-timezone-item';
         item.dataset.zone = tz.zone;
+        item.draggable = true;
         item.innerHTML = `
+            <span class="clock-timezone-grip" title="Drag to reorder" aria-label="Drag to reorder">⠿</span>
             <span class="clock-timezone-label">${this._escapeHtml(tz.label || tz.zone)}</span>
             <span class="clock-timezone-zone">${this._escapeHtml(tz.zone)}</span>
             <button class="clock-timezone-remove" title="Remove" aria-label="Remove">×</button>
         `;
         list.appendChild(item);
+    }
+
+    /**
+     * Attach drag-and-drop reordering to the timezone list.
+     * @param {HTMLElement} list - The .clock-timezone-list container
+     * @param {Object} pending - { timezones: [...], add: fn, remove: fn }
+     * @private
+     */
+    _initTimezoneDragDrop(list, pending) {
+        let draggedZone = null;
+        let dragOverZone = null;
+
+        const onDragStart = (e) => {
+            const item = e.target.closest('.clock-timezone-item');
+            if (!item) return;
+            draggedZone = item.dataset.zone;
+            item.classList.add('clock-timezone-dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', draggedZone);
+        };
+
+        const onDragEnd = (e) => {
+            const item = e.target.closest('.clock-timezone-item');
+            if (item) item.classList.remove('clock-timezone-dragging');
+            list.querySelectorAll('.clock-timezone-item.clock-timezone-drag-over').forEach(el => {
+                el.classList.remove('clock-timezone-drag-over');
+            });
+            draggedZone = null;
+            dragOverZone = null;
+        };
+
+        const onDragOver = (e) => {
+            e.preventDefault();
+            if (!draggedZone) return;
+
+            const item = e.target.closest('.clock-timezone-item');
+            if (!item || item.dataset.zone === draggedZone) return;
+
+            // Remove drag-over from all items
+            list.querySelectorAll('.clock-timezone-item.clock-timezone-drag-over').forEach(el => {
+                el.classList.remove('clock-timezone-drag-over');
+            });
+
+            dragOverZone = item.dataset.zone;
+            item.classList.add('clock-timezone-drag-over');
+        };
+
+        const onDragLeave = (e) => {
+            const item = e.target.closest('.clock-timezone-item');
+            if (item) item.classList.remove('clock-timezone-drag-over');
+        };
+
+        const onDrop = (e) => {
+            e.preventDefault();
+            const targetItem = e.target.closest('.clock-timezone-item');
+            if (!targetItem || !draggedZone) return;
+
+            const targetZone = targetItem.dataset.zone;
+            if (targetZone === draggedZone) return;
+
+            // Reorder the pending array: move draggedZone to targetZone's position
+            const fromIdx = pending.timezones.findIndex(tz => tz.zone === draggedZone);
+            const toIdx = pending.timezones.findIndex(tz => tz.zone === targetZone);
+            if (fromIdx === -1 || toIdx === -1) return;
+
+            const [moved] = pending.timezones.splice(fromIdx, 1);
+            pending.timezones.splice(toIdx, 0, moved);
+
+            // Re-render the list to reflect new order
+            pending.render();
+        };
+
+        list.addEventListener('dragstart', onDragStart);
+        list.addEventListener('dragend', onDragEnd);
+        list.addEventListener('dragover', onDragOver);
+        list.addEventListener('dragleave', onDragLeave);
+        list.addEventListener('drop', onDrop);
     }
 
     /**

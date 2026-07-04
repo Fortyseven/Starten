@@ -403,6 +403,38 @@
     color: var(--danger);
 }
 
+/* Drag handle */
+.clock-timezone-grip {
+    color: var(--text-muted);
+    font-size: 14px;
+    cursor: grab;
+    user-select: none;
+    flex-shrink: 0;
+    opacity: 0.5;
+    transition: opacity 0.15s;
+    line-height: 1;
+}
+
+.clock-timezone-item:hover .clock-timezone-grip {
+    opacity: 1;
+}
+
+.clock-timezone-grip:active {
+    cursor: grabbing;
+}
+
+/* Dragging state */
+.clock-timezone-item.clock-timezone-dragging {
+    opacity: 0.4;
+    border-style: dashed;
+}
+
+/* Drag-over indicator */
+.clock-timezone-item.clock-timezone-drag-over {
+    border-color: var(--accent);
+    box-shadow: inset 0 0 0 1px var(--accent);
+}
+
 /* Add timezone row */
 .clock-add-timezone {
     display: flex;
