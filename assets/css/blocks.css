@@ -224,10 +224,12 @@
 
 .clock-label {
     flex-shrink: 0;
-    font-size: 13px;
+    font-size: 1.5em;
     font-weight: 600;
     color: var(--text);
     min-width: 90px;
+    place-self: start;
+    padding-block-start: 0.3em;
 }
 
 .clock-time-wrapper {
@@ -240,7 +242,7 @@
 }
 
 .clock-time {
-    font-size: 24px;
+    font-size: 3em;
     font-weight: 600;
     color: var(--text);
     letter-spacing: 0.5px;
@@ -248,7 +250,7 @@
 }
 
 .clock-date {
-    font-size: 11px;
+    font-size: 1.5em;
     color: var(--text-muted);
 }
 
