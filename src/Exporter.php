@@ -67,7 +67,8 @@ class Exporter
 
             $exportPages[] = [
                 'name' => $page['name'],
-                'background' => json_decode($page['background'] ?? '{}', true) ?? [],
+                'background' => isset($page['background']) ? json_decode($page['background'], true) : [],
+                'layout' => isset($page['layout']) ? json_decode($page['layout'], true) : ['columns' => 'auto'],
                 'blocks' => $exportBlocks,
             ];
         }

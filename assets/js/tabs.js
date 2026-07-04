@@ -15,6 +15,8 @@ const Tabs = {
         this.container = document.getElementById('tabs');
         this.panel = document.getElementById('bg-panel');
         this.overlay = document.getElementById('bg-panel-overlay');
+        this.layoutPanel = document.getElementById('layout-panel');
+        this.layoutOverlay = document.getElementById('layout-panel-overlay');
         await this.load();
 
         // Add page button
@@ -32,6 +34,9 @@ const Tabs = {
 
         // Background panel event listeners
         this.initBackgroundPanel();
+
+        // Layout panel event listeners
+        this.initLayoutPanel();
     },
 
     initBackgroundPanel() {
@@ -63,6 +68,14 @@ const Tabs = {
             });
         });
 
+        // Layout selector in background panel
+        document.querySelectorAll('.layout-option').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.layout-option').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+
         // Live preview on input change
         const previewInputs = [
             'bg-solid-color',
@@ -89,6 +102,30 @@ const Tabs = {
                 }
             });
         }
+    },
+
+    initLayoutPanel() {
+        const closeBtn = document.getElementById('layout-panel-close');
+        const cancelBtn = document.getElementById('layout-panel-cancel');
+        const saveBtn = document.getElementById('layout-panel-save');
+
+        // Close panel
+        if (closeBtn) closeBtn.addEventListener('click', () => this.closeLayoutPanel());
+        if (cancelBtn) cancelBtn.addEventListener('click', () => this.closeLayoutPanel());
+        if (saveBtn) saveBtn.addEventListener('click', () => this.saveLayout());
+
+        // Overlay click closes panel
+        if (this.layoutOverlay) {
+            this.layoutOverlay.addEventListener('click', () => this.closeLayoutPanel());
+        }
+
+        // Layout selector buttons
+        document.querySelectorAll('.layout-option').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.layout-option').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
     },
 
     async load() {
@@ -155,6 +192,16 @@ const Tabs = {
                 this.editBackground(page.id);
             });
 
+            const editLayoutItem = document.createElement('button');
+            editLayoutItem.className = 'tab-dropdown-item';
+            editLayoutItem.setAttribute('role', 'menuitem');
+            editLayoutItem.innerHTML = '📐 Edit layout';
+            editLayoutItem.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.closeTabMenus();
+                this.editLayout(page.id);
+            });
+
             const deleteItem = document.createElement('button');
             deleteItem.className = 'tab-dropdown-item tab-dropdown-item-danger';
             deleteItem.setAttribute('role', 'menuitem');
@@ -167,6 +214,7 @@ const Tabs = {
 
             dropdown.appendChild(renameItem);
             dropdown.appendChild(editBgItem);
+            dropdown.appendChild(editLayoutItem);
             dropdown.appendChild(deleteItem);
 
             tab.appendChild(nameSpan);
@@ -261,6 +309,13 @@ const Tabs = {
         AppState.currentPageId = pageId;
         sessionStorage.setItem('currentPageId', pageId);
         this.render();
+        // Apply layout BEFORE loading blocks (render needs it)
+        const page = AppState.pages.find(p => p.id === pageId);
+        if (page && page.layout) {
+            const layoutConfig = typeof page.layout === 'string' ? JSON.parse(page.layout) : page.layout;
+            const columns = layoutConfig.columns || 'auto';
+            Layout.set(columns);
+        }
         await Blocks.load();
         this.applyPageBackground(pageId);
     },
@@ -403,6 +458,68 @@ const Tabs = {
         if (this.overlay) this.overlay.classList.add('bg-hidden');
         if (this.panel) this.panel.classList.add('bg-hidden');
         this.originalBackground = null;
+    },
+
+    // ===== Layout Editor =====
+
+    editLayout(pageId) {
+        const page = AppState.pages.find(p => p.id === pageId);
+        if (!page) return;
+
+        // Parse current layout
+        let layout = {};
+        try {
+            layout = typeof page.layout === 'string' ? JSON.parse(page.layout) : page.layout;
+        } catch {
+            layout = {};
+        }
+        if (!layout || typeof layout !== 'object') layout = { columns: 'auto' };
+        const layoutColumns = layout.columns || 'auto';
+
+        // Update layout selector
+        document.querySelectorAll('.layout-option').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.columns === layoutColumns);
+        });
+
+        // Show panel
+        if (this.layoutOverlay) this.layoutOverlay.classList.remove('bg-hidden');
+        if (this.layoutPanel) this.layoutPanel.classList.remove('bg-hidden');
+    },
+
+    closeLayoutPanel() {
+        if (this.layoutOverlay) this.layoutOverlay.classList.add('bg-hidden');
+        if (this.layoutPanel) this.layoutPanel.classList.add('bg-hidden');
+    },
+
+    async saveLayout() {
+        const pageId = AppState.currentPageId;
+        if (!pageId) return;
+
+        // Read layout from the layout selector
+        const activeLayoutBtn = document.querySelector('.layout-option.active');
+        const layoutColumns = activeLayoutBtn ? activeLayoutBtn.dataset.columns : 'auto';
+
+        // Reassign blocks if switching to a fixed column mode
+        const colNum = layoutColumns === 'auto' ? 0 : parseInt(layoutColumns, 10);
+        if (colNum > 0) {
+            Layout.reassignBlocks(colNum);
+        }
+
+        // Send to server
+        const result = await api('pages:update', { id: pageId, layout: { columns: layoutColumns } });
+        if (result && result.page) {
+            // Update local state
+            const page = AppState.pages.find(p => p.id === pageId);
+            if (page) {
+                page.layout = result.page.layout;
+            }
+
+            // Apply layout
+            Layout.set(layoutColumns);
+            await Blocks.load();
+        }
+
+        this.closeLayoutPanel();
     },
 
     switchBgMode(mode) {

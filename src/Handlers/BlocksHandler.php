@@ -27,6 +27,10 @@ class BlocksHandler
                 'SELECT * FROM block_items WHERE block_id = ? ORDER BY sort_order, id',
                 [$blockId]
             );
+            // Ensure column property exists (default to 1 for legacy blocks)
+            $config = json_decode($block['config'] ?? '{}', true) ?? [];
+            $config['column'] = $config['column'] ?? 1;
+            $block['config'] = json_encode($config);
         }
 
         apiResponse(['blocks' => $blocks]);
@@ -49,6 +53,11 @@ class BlocksHandler
         $maxOrder = \Database::value(
             'SELECT MAX(sort_order) FROM blocks WHERE page_id = ?', [$pageId]
         ) ?? -1;
+
+        // Ensure column is set in config (default to 1)
+        $configData = json_decode($config, true) ?? [];
+        $configData['column'] = $configData['column'] ?? 1;
+        $config = json_encode($configData);
 
         \Database::exec(
             'INSERT INTO blocks (page_id, type, title, config, sort_order) VALUES (?, ?, ?, ?, ?)',
@@ -80,8 +89,13 @@ class BlocksHandler
             $params[] = trim($input['type']);
         }
         if (isset($input['config'])) {
+            $config = is_array($input['config']) ? json_encode($input['config']) : $input['config'];
+            // Ensure column is set in config
+            $configData = json_decode($config, true) ?? [];
+            $configData['column'] = $configData['column'] ?? 1;
+            $config = json_encode($configData);
             $updates[] = 'config = ?';
-            $params[] = is_array($input['config']) ? json_encode($input['config']) : $input['config'];
+            $params[] = $config;
         }
 
         if (empty($updates)) {

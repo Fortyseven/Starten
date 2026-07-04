@@ -30,6 +30,51 @@ const Blocks = {
                 this.closeBlockMenus();
             }
         });
+
+        // Container-level dragover for column drop zone tracking
+        this.container.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            if (this.dragState && this.dragState.type === 'block') {
+                this._updateDropZones(e.clientX, e.clientY);
+            }
+        });
+
+        // Container-level drop — handles drops on empty space (bottom of column)
+        this.container.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (!this.dragState || this.dragState.type !== 'block') return;
+
+            // If dropped directly on a block, the block's drop handler handles it
+            const droppedOnBlock = e.target.closest('.block');
+            if (droppedOnBlock && parseInt(droppedOnBlock.dataset.id, 10) !== this.dragState.id) return;
+
+            // Dropped on empty space — find which column wrapper the mouse is over
+            const colWrappers = this.container.querySelectorAll('.layout-column');
+            let targetWrapper = null;
+            for (const wrapper of colWrappers) {
+                const rect = wrapper.getBoundingClientRect();
+                if (e.clientX >= rect.left && e.clientX <= rect.right) {
+                    targetWrapper = wrapper;
+                    break;
+                }
+            }
+            if (!targetWrapper) return;
+
+            const targetCol = parseInt(targetWrapper.dataset.column, 10);
+
+            // Find the last block in the target column to append after
+            const blocksInCol = Array.from(targetWrapper.querySelectorAll('.block'));
+            const lastBlock = blocksInCol.filter(b => parseInt(b.dataset.id, 10) !== this.dragState.id).pop();
+
+            if (lastBlock) {
+                // Drop after the last block in that column
+                this.reorderBlocks(this.dragState.id, parseInt(lastBlock.dataset.id, 10));
+                this.moveBlockToColumn(this.dragState.id, targetCol);
+            } else {
+                // Empty column — just move to that column
+                this.moveBlockToColumn(this.dragState.id, targetCol);
+            }
+        });
     },
 
     async load() {
@@ -68,10 +113,42 @@ const Blocks = {
             return;
         }
 
-        blocks.forEach(block => {
-            const el = this.createBlockElement(block);
-            this.container.appendChild(el);
-        });
+        // In fixed column mode, group blocks into flex column wrappers
+        const layout = Layout.get();
+        const isFixed = layout !== 'auto';
+
+        if (isFixed) {
+            // Group blocks by column
+            const columns = {};
+            blocks.forEach(block => {
+                const config = typeof block.config === 'string' ? JSON.parse(block.config) : (block.config || {});
+                const col = config.column || 1;
+                if (!columns[col]) columns[col] = [];
+                columns[col].push(block);
+            });
+
+            // Create flex column wrappers
+            const numCols = parseInt(layout, 10);
+            for (let col = 1; col <= numCols; col++) {
+                const colWrapper = document.createElement('div');
+                colWrapper.className = 'layout-column';
+                colWrapper.dataset.column = col;
+
+                const colBlocks = columns[col] || [];
+                colBlocks.forEach(block => {
+                    const el = this.createBlockElement(block);
+                    colWrapper.appendChild(el);
+                });
+
+                this.container.appendChild(colWrapper);
+            }
+        } else {
+            // Auto (masonry) mode — just append in order
+            blocks.forEach(block => {
+                const el = this.createBlockElement(block);
+                this.container.appendChild(el);
+            });
+        }
     },
 
     createBlockElement(block) {
@@ -79,6 +156,12 @@ const Blocks = {
         const blockEl = clone.querySelector('.block');
         blockEl.dataset.id = block.id;
         blockEl.dataset.type = block.type || 'link_list';
+
+        // Column property (default: 1)
+        const config = typeof block.config === 'string' ? JSON.parse(block.config) : (block.config || {});
+        const column = config.column || 1;
+        blockEl.dataset.column = column;
+        // gridColumn/gridRow set in render() for fixed layout mode
 
         // Title
         const titleEl = blockEl.querySelector('.block-title');
@@ -146,32 +229,34 @@ const Blocks = {
             if (e.target !== blockEl) return;
             this.dragState = { type: 'block', id: block.id, el: blockEl };
             blockEl.classList.add('dragging');
+            const container = document.getElementById('blocks-container');
+            if (container) container.classList.add('dragging');
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setData('text/plain', block.id.toString());
+
+            // Create column drop zones and ghost (fixed layout mode)
+            this._createDropZones();
         });
 
         blockEl.addEventListener('dragend', () => {
             blockEl.classList.remove('dragging');
+            const container = document.getElementById('blocks-container');
+            if (container) container.classList.remove('dragging');
             document.querySelectorAll('.block.drag-over').forEach(el => el.classList.remove('drag-over'));
+            this.clearColumnHighlights();
+            this._removeDropZones();
             this.dragState = null;
-        });
-
-        blockEl.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            if (this.dragState && this.dragState.type === 'block' && this.dragState.id !== block.id) {
-                blockEl.classList.add('drag-over');
-            }
-        });
-
-        blockEl.addEventListener('dragleave', () => {
-            blockEl.classList.remove('drag-over');
         });
 
         blockEl.addEventListener('drop', (e) => {
             e.preventDefault();
+            e.stopPropagation(); // Don't bubble to container handler
             blockEl.classList.remove('drag-over');
+            this.clearColumnHighlights();
             if (this.dragState && this.dragState.type === 'block' && this.dragState.id !== block.id) {
                 this.reorderBlocks(this.dragState.id, block.id);
+                // Also move the block to the target column
+                this.moveBlockToColumn(this.dragState.id, parseInt(blockEl.dataset.column, 10));
             }
         });
 
@@ -411,5 +496,173 @@ const Blocks = {
         });
 
         await this.load();
+    },
+
+    /**
+     * Move a block to a specific column.
+     * @param {number} blockId - Block ID to move
+     * @param {number} targetColumn - Target column (1-indexed)
+     */
+    async moveBlockToColumn(blockId, targetColumn) {
+        const block = AppState.blocks.find(b => b.id === blockId);
+        if (!block) return;
+
+        const config = typeof block.config === 'string' ? JSON.parse(block.config) : (block.config || {});
+        config.column = targetColumn;
+
+        await api('blocks:update', {
+            id: blockId,
+            config: config,
+        });
+
+        // Reload blocks to recompute grid-row positions
+        await this.load();
+    },
+
+    /**
+     * Highlight the target column area during drag.
+     * @param {number} column - Column number to highlight
+     */
+    highlightColumn(column) {
+        // Clear all highlights
+        this.clearColumnHighlights();
+
+        // Highlight all blocks in the target column
+        document.querySelectorAll(`.block[data-column="${column}"]`).forEach(el => {
+            el.classList.add('column-target');
+        });
+    },
+
+    /**
+     * Clear column highlights.
+     */
+    clearColumnHighlights() {
+        document.querySelectorAll('.block').forEach(el => {
+            el.style.boxShadow = '';
+            el.classList.remove('column-target');
+        });
+    },
+
+    /**
+     * Create column drop zone overlays and ghost preview.
+     */
+    _createDropZones() {
+        const container = this.container;
+        if (!container || container.dataset.layout === 'auto') return;
+
+        const colWrappers = container.querySelectorAll('.layout-column');
+
+        // Create column drop zone overlays — one per column wrapper
+        colWrappers.forEach(wrapper => {
+            const rect = wrapper.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+            const zone = document.createElement('div');
+            zone.className = 'column-drop-zone';
+            zone.dataset.column = wrapper.dataset.column;
+            zone.style.left = (rect.left - containerRect.left) + 'px';
+            zone.style.top = '0px';
+            zone.style.width = rect.width + 'px';
+            zone.style.height = containerRect.height + 'px';
+            container.appendChild(zone);
+        });
+
+        // Create ghost preview
+        const ghost = document.createElement('div');
+        ghost.className = 'drop-ghost';
+        ghost.id = 'drop-ghost';
+        const draggingEl = document.querySelector('.block.dragging');
+        if (draggingEl) {
+            ghost.style.width = draggingEl.offsetWidth + 'px';
+            ghost.style.height = draggingEl.offsetHeight + 'px';
+        } else {
+            ghost.style.width = '200px';
+            ghost.style.height = '100px';
+        }
+        container.appendChild(ghost);
+    },
+
+    /**
+     * Remove column drop zone overlays and ghost preview.
+     */
+    _removeDropZones() {
+        this.container.querySelectorAll('.column-drop-zone').forEach(el => el.remove());
+        const ghost = this.container.querySelector('.drop-ghost');
+        if (ghost) ghost.remove();
+    },
+
+    /**
+     * Update drop zone highlights based on mouse position.
+     * @param {number} clientX - Mouse X
+     * @param {number} clientY - Mouse Y
+     */
+    _updateDropZones(clientX, clientY) {
+        const container = this.container;
+        if (!container || container.dataset.layout === 'auto') return;
+
+        const containerRect = container.getBoundingClientRect();
+        const colWrappers = container.querySelectorAll('.layout-column');
+
+        // Find which column wrapper the mouse is over
+        let targetCol = null;
+        let targetWrapper = null;
+        for (const wrapper of colWrappers) {
+            const rect = wrapper.getBoundingClientRect();
+            if (clientX >= rect.left && clientX <= rect.right) {
+                targetCol = parseInt(wrapper.dataset.column, 10);
+                targetWrapper = wrapper;
+                break;
+            }
+        }
+        if (!targetCol) return;
+
+        // Highlight the target column
+        container.querySelectorAll('.column-drop-zone').forEach(zone => {
+            const isActive = parseInt(zone.dataset.column, 10) === targetCol;
+            zone.classList.toggle('active', isActive);
+        });
+
+        // Highlight blocks in target column
+        this.clearColumnHighlights();
+        document.querySelectorAll(`.block[data-column="${targetCol}"]`).forEach(el => {
+            el.classList.add('column-target');
+        });
+
+        // Position ghost at predicted drop position within the column
+        const ghost = container.querySelector('.drop-ghost');
+        if (ghost) {
+            const colBlocks = Array.from(targetWrapper.querySelectorAll('.block'));
+            // Find the position based on Y
+            let ghostIndex = colBlocks.length + 1; // after all blocks
+            for (let i = 0; i < colBlocks.length; i++) {
+                const blockRect = colBlocks[i].getBoundingClientRect();
+                const blockCenterY = blockRect.top + blockRect.height / 2;
+                if (clientY > blockCenterY) {
+                    ghostIndex = i + 1;
+                } else {
+                    break;
+                }
+            }
+
+            // Position ghost
+            const wrapperRect = targetWrapper.getBoundingClientRect();
+            let ghostTop;
+            if (ghostIndex <= colBlocks.length) {
+                // Ghost takes the position of the block at ghostIndex
+                ghostTop = colBlocks[ghostIndex].getBoundingClientRect().top - containerRect.top;
+            } else {
+                // After all blocks
+                const lastBlock = colBlocks[colBlocks.length - 1];
+                if (lastBlock) {
+                    ghostTop = lastBlock.getBoundingClientRect().bottom - containerRect.top + 16;
+                } else {
+                    ghostTop = 16;
+                }
+            }
+
+            ghost.style.top = ghostTop + 'px';
+            ghost.style.left = (wrapperRect.left - containerRect.left) + 'px';
+            ghost.style.width = wrapperRect.width + 'px';
+            ghost.style.display = 'block';
+        }
     },
 };

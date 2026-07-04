@@ -80,6 +80,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize theme first
     Theme.init();
 
+    // Initialize layout (must happen before Tabs loads page data)
+    Layout.init();
+
     // Initialize shared modules
     Items.init();
 

@@ -186,6 +186,30 @@ class Render
             </div>
         </aside>
 
+        <!-- Layout editor slide-in panel -->
+        <div id="layout-panel-overlay" class="bg-panel-overlay bg-hidden"></div>
+        <aside id="layout-panel" class="bg-panel bg-hidden">
+            <div class="bg-panel-header">
+                <h2>Page Layout</h2>
+                <button id="layout-panel-close" class="bg-panel-close" aria-label="Close">×</button>
+            </div>
+            <div class="bg-panel-body">
+                <p class="bg-description">Choose how blocks are arranged across columns.</p>
+                <div class="layout-selector">
+                    <button class="layout-option active" data-columns="auto" title="Auto — responsive masonry layout">Auto</button>
+                    <button class="layout-option" data-columns="1" title="Single column">1</button>
+                    <button class="layout-option" data-columns="2" title="Two columns">2</button>
+                    <button class="layout-option" data-columns="3" title="Three columns">3</button>
+                    <button class="layout-option" data-columns="4" title="Four columns">4</button>
+                    <button class="layout-option" data-columns="5" title="Five columns">5</button>
+                </div>
+            </div>
+            <div class="bg-panel-footer">
+                <button id="layout-panel-cancel" class="bg-btn bg-btn-secondary">Cancel</button>
+                <button id="layout-panel-save" class="bg-btn bg-btn-primary">Save</button>
+            </div>
+        </aside>
+
         <!-- Block Type Picker Modal -->
         <div id="type-picker-overlay" class="type-picker-overlay"></div>
         <div id="type-picker-modal" class="type-picker-modal">
@@ -260,6 +284,7 @@ class Render
 
     <script src="assets/js/app.js"></script>
     <script src="assets/js/theme.js"></script>
+    <script src="assets/js/layout.js"></script>
     <script src="assets/js/tabs.js"></script>
     <script src="assets/js/blocks/Block.js"></script>
     <script src="assets/js/blocks/LinkListBlock.js"></script>

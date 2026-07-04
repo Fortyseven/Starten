@@ -58,9 +58,12 @@ class Importer
                 $background = $pageData['background'] ?? [];
                 $backgroundJson = is_array($background) ? json_encode($background) : '{}';
 
+                $layout = $pageData['layout'] ?? null;
+                $layoutJson = $layout !== null ? (is_array($layout) ? json_encode($layout) : $layout) : null;
+
                 Database::exec(
-                    'INSERT INTO pages (name, sort_order, background) VALUES (?, ?, ?)',
-                    [$name, $pageOrder, $backgroundJson]
+                    'INSERT INTO pages (name, sort_order, background, layout) VALUES (?, ?, ?, ?)',
+                    [$name, $pageOrder, $backgroundJson, $layoutJson]
                 );
                 $pageId = Database::lastInsertId();
 

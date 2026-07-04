@@ -23,7 +23,8 @@ class PagesHandler
 
         $maxOrder = \Database::value('SELECT MAX(sort_order) FROM pages') ?? -1;
         $background = isset($input['background']) ? json_encode($input['background']) : '{}';
-        \Database::exec('INSERT INTO pages (name, sort_order, background) VALUES (?, ?, ?)', [$name, $maxOrder + 1, $background]);
+        $layout = isset($input['layout']) ? json_encode($input['layout']) : '{"columns":"auto"}';
+        \Database::exec('INSERT INTO pages (name, sort_order, background, layout) VALUES (?, ?, ?, ?)', [$name, $maxOrder + 1, $background, $layout]);
         $id = \Database::lastInsertId();
 
         $page = \Database::one('SELECT * FROM pages WHERE id = ?', [$id]);
@@ -43,6 +44,12 @@ class PagesHandler
         if (isset($input['background'])) {
             $background = json_encode($input['background']);
             \Database::exec('UPDATE pages SET background = ? WHERE id = ?', [$background, $id]);
+        }
+
+        // Allow updating layout
+        if (isset($input['layout'])) {
+            $layout = json_encode($input['layout']);
+            \Database::exec('UPDATE pages SET layout = ? WHERE id = ?', [$layout, $id]);
         }
 
         $page = \Database::one('SELECT * FROM pages WHERE id = ?', [$id]);
