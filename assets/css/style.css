@@ -81,7 +81,7 @@ button {
     cursor: pointer;
     border: 1px solid transparent;
     border-bottom: none;
-    font-size: 13px;
+    font-size: 1.2em;
     font-weight: 500;
     white-space: nowrap;
     transition: all 0.15s ease;
@@ -526,7 +526,7 @@ button {
 
 .block-title {
     flex: 1;
-    font-size: 13px;
+    font-size: 1.3em;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.5px;
