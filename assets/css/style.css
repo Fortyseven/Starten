@@ -829,6 +829,80 @@ button {
     color: white;
 }
 
+/* ===== Icon View ===== */
+
+/* Container in icon view: CSS grid */
+.block-items.view-icon {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 8px;
+    padding: 12px;
+}
+
+/* Icon item: vertical card */
+.block-item-icon {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 8px;
+    gap: 6px;
+    text-decoration: none;
+    color: var(--text);
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background 0.1s;
+    position: relative;
+    min-height: 80px;
+}
+
+.block-item-icon:hover {
+    background: var(--item-hover-bg);
+}
+
+.block-item-icon:active {
+    background: var(--item-active-bg);
+}
+
+/* Larger favicon in icon view */
+.block-item-icon .item-favicon {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    object-fit: contain;
+}
+
+/* Title below icon */
+.block-item-icon .item-title {
+    font-size: 1em;
+    text-align: center;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    word-break: break-word;
+}
+
+/* Action buttons — absolute top-right corner */
+.block-item-icon .item-actions {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.block-item-icon:hover .item-actions {
+    opacity: 1;
+}
+
+.block-item-icon .item-edit-btn,
+.block-item-icon .item-delete-btn {
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
+}
+
 /* ===== Item Edit Modal ===== */
 
 /* Overlay backdrop */
@@ -1651,4 +1725,167 @@ body {
     border-color: var(--accent);
     color: var(--accent);
     background: var(--tab-hover-bg);
+}
+
+/* ===== Link List Config Modal ===== */
+
+/* Modal container */
+.link-list-config-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.95);
+    width: 400px;
+    max-width: 90vw;
+    background: var(--bg-secondary);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    z-index: 301;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+}
+
+.link-list-config-modal.open {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+/* Modal header */
+.link-list-config-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--card-border);
+    flex-shrink: 0;
+}
+
+.link-list-config-header h2 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.link-list-config-close {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+}
+
+.link-list-config-close:hover {
+    background: var(--tab-hover-bg);
+    color: var(--text);
+}
+
+/* Modal body */
+.link-list-config-body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.link-list-config-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.link-list-config-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+/* View option buttons */
+.link-list-view-options {
+    display: flex;
+    gap: 8px;
+}
+
+.link-list-view-option {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 14px 12px;
+    border: 2px solid var(--card-border);
+    border-radius: 8px;
+    background: var(--card-bg);
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.link-list-view-option:hover {
+    border-color: var(--accent);
+    background: var(--item-hover-bg);
+}
+
+.link-list-view-option.selected {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: #fff;
+}
+
+.link-list-view-option-icon {
+    font-size: 24px;
+    line-height: 1;
+}
+
+/* Modal footer */
+.link-list-config-footer {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    padding: 14px 20px;
+    border-top: 1px solid var(--card-border);
+    flex-shrink: 0;
+}
+
+.link-list-config-btn {
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid var(--card-border);
+}
+
+.link-list-config-btn-secondary {
+    background: var(--card-bg);
+    color: var(--text-secondary);
+}
+
+.link-list-config-btn-secondary:hover {
+    background: var(--tab-hover-bg);
+    color: var(--text);
+}
+
+.link-list-config-btn-primary {
+    background: var(--accent);
+    color: #ffffff;
+    border-color: var(--accent);
+}
+
+.link-list-config-btn-primary:hover {
+    background: var(--accent-hover);
 }
