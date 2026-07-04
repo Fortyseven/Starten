@@ -246,9 +246,8 @@ class ClockBlock extends BlockBase {
         // Event: Drag-and-drop reordering
         this._initTimezoneDragDrop(timezoneList, { timezones: pendingTimezones, render: reRenderList });
 
-        // Event: Add timezone
-        const addBtn = modal.querySelector('.clock-add-btn');
-        addBtn.addEventListener('click', () => {
+        // Commit any pending timezone from the add form into pendingTimezones
+        const commitPendingTimezone = () => {
             const zone = zoneSelect.value;
             if (!zone) return;
             const labelInput = modal.querySelector('.clock-label-input');
@@ -259,7 +258,11 @@ class ClockBlock extends BlockBase {
                 this._addTimezoneItem(timezoneList, { zone, label });
             }
             labelInput.value = '';
-        });
+        };
+
+        // Event: Add timezone
+        const addBtn = modal.querySelector('.clock-add-btn');
+        addBtn.addEventListener('click', commitPendingTimezone);
 
         // Event: Seconds toggle
         const secondsCheckbox = modal.querySelector('#clock-show-seconds');
@@ -287,6 +290,9 @@ class ClockBlock extends BlockBase {
 
         // Event: Save
         const save = async () => {
+            // Commit any pending timezone entry before saving
+            commitPendingTimezone();
+
             const newConfig = {
                 ...this.config,
                 timezones: pendingTimezones,
