@@ -289,6 +289,7 @@ class Render
     <script src="assets/js/blocks/Block.js"></script>
     <script src="assets/js/blocks/LinkListBlock.js"></script>
     <script src="assets/js/blocks/ClockBlock.js"></script>
+    <script src="assets/js/blocks/IframeBlock.js"></script>
     <script src="assets/js/blocks.js"></script>
     <script src="assets/js/items.js"></script>
     <script src="assets/js/settings.js"></script>

@@ -427,6 +427,7 @@ const Blocks = {
         switch (type) {
             case 'link_list': return '🔗';
             case 'clock': return '🕐';
+            case 'iframe': return '🖥️';
             default: return '📦';
         }
     },
