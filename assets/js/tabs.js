@@ -10,6 +10,8 @@ const Tabs = {
     overlay: null,
     currentMode: 'solid',
     originalBackground: null,
+    editingPageId: null,
+    editingLayoutPageId: null,
 
     async init() {
         this.container = document.getElementById('tabs');
@@ -406,6 +408,8 @@ const Tabs = {
     // ===== Background Editor =====
 
     editBackground(pageId) {
+        this.editingPageId = pageId;
+
         const page = AppState.pages.find(p => p.id === pageId);
         if (!page) return;
 
@@ -458,11 +462,14 @@ const Tabs = {
         if (this.overlay) this.overlay.classList.add('bg-hidden');
         if (this.panel) this.panel.classList.add('bg-hidden');
         this.originalBackground = null;
+        this.editingPageId = null;
     },
 
     // ===== Layout Editor =====
 
     editLayout(pageId) {
+        this.editingLayoutPageId = pageId;
+
         const page = AppState.pages.find(p => p.id === pageId);
         if (!page) return;
 
@@ -489,10 +496,11 @@ const Tabs = {
     closeLayoutPanel() {
         if (this.layoutOverlay) this.layoutOverlay.classList.add('bg-hidden');
         if (this.layoutPanel) this.layoutPanel.classList.add('bg-hidden');
+        this.editingLayoutPageId = null;
     },
 
     async saveLayout() {
-        const pageId = AppState.currentPageId;
+        const pageId = this.editingLayoutPageId;
         if (!pageId) return;
 
         // Read layout from the layout selector
@@ -570,7 +578,7 @@ const Tabs = {
     },
 
     async saveBackground() {
-        const pageId = AppState.currentPageId;
+        const pageId = this.editingPageId;
         if (!pageId) return;
 
         let background = { type: this.currentMode, value: {} };
