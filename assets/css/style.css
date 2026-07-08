@@ -377,6 +377,7 @@ button {
 
 /* Column wrapper inside the container */
 .layout-column {
+    position: relative;
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -422,46 +423,24 @@ button {
     }
 }
 
-/* ===== Column Drop Zones (fixed layout mode) ===== */
+/* ===== Block Phantom (fixed layout mode) ===== */
 #blocks-container.dragging {
     position: relative;
 }
 
-/* Full-column overlay that highlights when dragging over it */
-.column-drop-zone {
+/* Phantom block — shows the dragged block's outline at the insertion point */
+.block-phantom {
     position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 0;
-    pointer-events: none;
-    z-index: 5;
-    background: transparent;
-    transition: background 0.15s ease;
-}
-
-.column-drop-zone.active {
+    left: 0;
+    right: 0;
+    border: 2px dashed var(--drag-over-border);
+    border-radius: 10px;
     background: var(--drag-over-bg);
-    border: 2px dashed var(--accent);
-    border-radius: 10px;
-}
-
-/* Ghost preview — shows where the block will land */
-.drop-ghost {
-    position: absolute;
-    border: 2px solid var(--accent);
-    border-radius: 10px;
-    background: var(--accent);
-    opacity: 0.15;
     pointer-events: none;
-    z-index: 6;
-    transition: top 0.1s ease;
-}
-
-/* Highlight all blocks in the target column */
-.block.column-target {
-    outline: 2px solid var(--accent);
-    outline-offset: -2px;
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    z-index: 10;
+    display: none;
+    transition: top 0.1s ease, height 0.1s ease;
+    min-height: 40px;
 }
 
 /* ===== Block Card ===== */

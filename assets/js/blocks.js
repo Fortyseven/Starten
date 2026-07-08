@@ -12,6 +12,11 @@ const Blocks = {
     /** @type {Map<number, Object>} blockId -> Block instance */
     _instances: new Map(),
 
+    // Tracked drop position for block-level drag-and-drop
+    _dropTargetColumn: null,
+    _dropTargetBlockId: null,
+    _dropPosition: null, // 'before' or 'after'
+
     init() {
         this.container = document.getElementById('blocks-container');
         this.blockTemplate = document.getElementById('block-template');
@@ -39,40 +44,25 @@ const Blocks = {
             }
         });
 
-        // Container-level drop — handles drops on empty space (bottom of column)
+        // Container-level drop — single source of truth for all block drops
         this.container.addEventListener('drop', (e) => {
             e.preventDefault();
             if (!this.dragState || this.dragState.type !== 'block') return;
 
-            // If dropped directly on a block, the block's drop handler handles it
-            const droppedOnBlock = e.target.closest('.block');
-            if (droppedOnBlock && parseInt(droppedOnBlock.dataset.id, 10) !== this.dragState.id) return;
+            const movedId = this.dragState.id;
+            const targetCol = this._dropTargetColumn;
+            const targetBlockId = this._dropTargetBlockId;
+            const position = this._dropPosition;
+            this._resetDropState();
 
-            // Dropped on empty space — find which column wrapper the mouse is over
-            const colWrappers = this.container.querySelectorAll('.layout-column');
-            let targetWrapper = null;
-            for (const wrapper of colWrappers) {
-                const rect = wrapper.getBoundingClientRect();
-                if (e.clientX >= rect.left && e.clientX <= rect.right) {
-                    targetWrapper = wrapper;
-                    break;
-                }
-            }
-            if (!targetWrapper) return;
+            if (targetCol === null) return;
 
-            const targetCol = parseInt(targetWrapper.dataset.column, 10);
-
-            // Find the last block in the target column to append after
-            const blocksInCol = Array.from(targetWrapper.querySelectorAll('.block'));
-            const lastBlock = blocksInCol.filter(b => parseInt(b.dataset.id, 10) !== this.dragState.id).pop();
-
-            if (lastBlock) {
-                // Drop after the last block in that column
-                this.reorderBlocks(this.dragState.id, parseInt(lastBlock.dataset.id, 10));
-                this.moveBlockToColumn(this.dragState.id, targetCol);
+            // Use tracked drop position from the phantom
+            if (targetBlockId) {
+                this.reorderBlocks(movedId, targetBlockId, position);
+                this.moveBlockToColumn(movedId, targetCol);
             } else {
-                // Empty column — just move to that column
-                this.moveBlockToColumn(this.dragState.id, targetCol);
+                this.moveBlockToColumn(movedId, targetCol);
             }
         });
     },
@@ -243,21 +233,9 @@ const Blocks = {
             const container = document.getElementById('blocks-container');
             if (container) container.classList.remove('dragging');
             document.querySelectorAll('.block.drag-over').forEach(el => el.classList.remove('drag-over'));
-            this.clearColumnHighlights();
             this._removeDropZones();
+            this._resetDropState();
             this.dragState = null;
-        });
-
-        blockEl.addEventListener('drop', (e) => {
-            e.preventDefault();
-            e.stopPropagation(); // Don't bubble to container handler
-            blockEl.classList.remove('drag-over');
-            this.clearColumnHighlights();
-            if (this.dragState && this.dragState.type === 'block' && this.dragState.id !== block.id) {
-                this.reorderBlocks(this.dragState.id, block.id);
-                // Also move the block to the target column
-                this.moveBlockToColumn(this.dragState.id, parseInt(blockEl.dataset.column, 10));
-            }
         });
 
         // Delegate content rendering to the block type class
@@ -479,7 +457,7 @@ const Blocks = {
         );
     },
 
-    async reorderBlocks(movedId, targetId) {
+    async reorderBlocks(movedId, targetId, position = 'after') {
         const blocks = [...AppState.blocks];
         const movedIdx = blocks.findIndex(b => b.id === movedId);
         const targetIdx = blocks.findIndex(b => b.id === targetId);
@@ -488,7 +466,10 @@ const Blocks = {
 
         // Remove from old position, insert at new position
         const [moved] = blocks.splice(movedIdx, 1);
-        blocks.splice(targetIdx, 0, moved);
+        // After splice, if movedIdx < targetIdx, the target shifted down by 1
+        const adjustedTargetIdx = movedIdx < targetIdx ? targetIdx - 1 : targetIdx;
+        const insertIdx = position === 'before' ? adjustedTargetIdx : adjustedTargetIdx + 1;
+        blocks.splice(insertIdx, 0, moved);
 
         const order = blocks.map(b => b.id);
         await api('blocks:reorder', {
@@ -521,31 +502,7 @@ const Blocks = {
     },
 
     /**
-     * Highlight the target column area during drag.
-     * @param {number} column - Column number to highlight
-     */
-    highlightColumn(column) {
-        // Clear all highlights
-        this.clearColumnHighlights();
-
-        // Highlight all blocks in the target column
-        document.querySelectorAll(`.block[data-column="${column}"]`).forEach(el => {
-            el.classList.add('column-target');
-        });
-    },
-
-    /**
-     * Clear column highlights.
-     */
-    clearColumnHighlights() {
-        document.querySelectorAll('.block').forEach(el => {
-            el.style.boxShadow = '';
-            el.classList.remove('column-target');
-        });
-    },
-
-    /**
-     * Create column drop zone overlays and ghost preview.
+     * Create one phantom block element per column wrapper.
      */
     _createDropZones() {
         const container = this.container;
@@ -553,46 +510,32 @@ const Blocks = {
 
         const colWrappers = container.querySelectorAll('.layout-column');
 
-        // Create column drop zone overlays — one per column wrapper
         colWrappers.forEach(wrapper => {
-            const rect = wrapper.getBoundingClientRect();
-            const containerRect = container.getBoundingClientRect();
-            const zone = document.createElement('div');
-            zone.className = 'column-drop-zone';
-            zone.dataset.column = wrapper.dataset.column;
-            zone.style.left = (rect.left - containerRect.left) + 'px';
-            zone.style.top = '0px';
-            zone.style.width = rect.width + 'px';
-            zone.style.height = containerRect.height + 'px';
-            container.appendChild(zone);
+            const phantom = document.createElement('div');
+            phantom.className = 'block-phantom';
+            wrapper.appendChild(phantom);
         });
-
-        // Create ghost preview
-        const ghost = document.createElement('div');
-        ghost.className = 'drop-ghost';
-        ghost.id = 'drop-ghost';
-        const draggingEl = document.querySelector('.block.dragging');
-        if (draggingEl) {
-            ghost.style.width = draggingEl.offsetWidth + 'px';
-            ghost.style.height = draggingEl.offsetHeight + 'px';
-        } else {
-            ghost.style.width = '200px';
-            ghost.style.height = '100px';
-        }
-        container.appendChild(ghost);
     },
 
     /**
-     * Remove column drop zone overlays and ghost preview.
+     * Remove all phantom block elements.
      */
     _removeDropZones() {
-        this.container.querySelectorAll('.column-drop-zone').forEach(el => el.remove());
-        const ghost = this.container.querySelector('.drop-ghost');
-        if (ghost) ghost.remove();
+        document.querySelectorAll('.block-phantom').forEach(el => el.remove());
     },
 
     /**
-     * Update drop zone highlights based on mouse position.
+     * Reset tracked drop state.
+     */
+    _resetDropState() {
+        this._dropTargetColumn = null;
+        this._dropTargetBlockId = null;
+        this._dropPosition = null;
+    },
+
+    /**
+     * Update phantom block position based on mouse position.
+     * Shows a dashed outline of the dragged block at the insertion point.
      * @param {number} clientX - Mouse X
      * @param {number} clientY - Mouse Y
      */
@@ -600,70 +543,95 @@ const Blocks = {
         const container = this.container;
         if (!container || container.dataset.layout === 'auto') return;
 
-        const containerRect = container.getBoundingClientRect();
         const colWrappers = container.querySelectorAll('.layout-column');
 
         // Find which column wrapper the mouse is over
-        let targetCol = null;
         let targetWrapper = null;
         for (const wrapper of colWrappers) {
             const rect = wrapper.getBoundingClientRect();
             if (clientX >= rect.left && clientX <= rect.right) {
-                targetCol = parseInt(wrapper.dataset.column, 10);
                 targetWrapper = wrapper;
                 break;
             }
         }
-        if (!targetCol) return;
-
-        // Highlight the target column
-        container.querySelectorAll('.column-drop-zone').forEach(zone => {
-            const isActive = parseInt(zone.dataset.column, 10) === targetCol;
-            zone.classList.toggle('active', isActive);
-        });
-
-        // Highlight blocks in target column
-        this.clearColumnHighlights();
-        document.querySelectorAll(`.block[data-column="${targetCol}"]`).forEach(el => {
-            el.classList.add('column-target');
-        });
-
-        // Position ghost at predicted drop position within the column
-        const ghost = container.querySelector('.drop-ghost');
-        if (ghost) {
-            const colBlocks = Array.from(targetWrapper.querySelectorAll('.block'));
-            // Find the position based on Y
-            let ghostIndex = colBlocks.length + 1; // after all blocks
-            for (let i = 0; i < colBlocks.length; i++) {
-                const blockRect = colBlocks[i].getBoundingClientRect();
-                const blockCenterY = blockRect.top + blockRect.height / 2;
-                if (clientY > blockCenterY) {
-                    ghostIndex = i + 1;
-                } else {
-                    break;
-                }
-            }
-
-            // Position ghost
-            const wrapperRect = targetWrapper.getBoundingClientRect();
-            let ghostTop;
-            if (ghostIndex <= colBlocks.length) {
-                // Ghost takes the position of the block at ghostIndex
-                ghostTop = colBlocks[ghostIndex].getBoundingClientRect().top - containerRect.top;
-            } else {
-                // After all blocks
-                const lastBlock = colBlocks[colBlocks.length - 1];
-                if (lastBlock) {
-                    ghostTop = lastBlock.getBoundingClientRect().bottom - containerRect.top + 16;
-                } else {
-                    ghostTop = 16;
-                }
-            }
-
-            ghost.style.top = ghostTop + 'px';
-            ghost.style.left = (wrapperRect.left - containerRect.left) + 'px';
-            ghost.style.width = wrapperRect.width + 'px';
-            ghost.style.display = 'block';
+        if (!targetWrapper) {
+            // Hide all phantoms
+            colWrappers.forEach(wrapper => {
+                const phantom = wrapper.querySelector('.block-phantom');
+                if (phantom) phantom.style.display = 'none';
+            });
+            return;
         }
+
+        const targetCol = parseInt(targetWrapper.dataset.column, 10);
+
+        // Hide phantoms in non-target columns
+        colWrappers.forEach(wrapper => {
+            const phantom = wrapper.querySelector('.block-phantom');
+            if (phantom && wrapper !== targetWrapper) {
+                phantom.style.display = 'none';
+            }
+        });
+
+        // Find the phantom in the target column
+        const phantom = targetWrapper.querySelector('.block-phantom');
+        if (!phantom) return;
+
+        // Size the phantom to match the dragged block
+        const draggingEl = document.querySelector('.block.dragging');
+        if (draggingEl) {
+            phantom.style.width = draggingEl.offsetWidth + 'px';
+            phantom.style.height = draggingEl.offsetHeight + 'px';
+        }
+
+        // Get all blocks in the target column (excluding the dragged one)
+        const colBlocks = Array.from(targetWrapper.querySelectorAll('.block')).filter(
+            b => parseInt(b.dataset.id, 10) !== this.dragState.id
+        );
+
+        if (colBlocks.length === 0) {
+            // Empty column — show phantom at the top
+            phantom.style.display = 'block';
+            phantom.style.top = '0px';
+            this._dropTargetColumn = targetCol;
+            this._dropTargetBlockId = null;
+            this._dropPosition = 'after';
+            return;
+        }
+
+        // Find the nearest block by center-Y distance
+        let closestBlock = null;
+        let position = null;
+        let minDistance = Infinity;
+
+        for (const block of colBlocks) {
+            const rect = block.getBoundingClientRect();
+            const centerY = rect.top + rect.height / 2;
+            const distance = Math.abs(clientY - centerY);
+
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestBlock = block;
+                position = clientY < centerY ? 'before' : 'after';
+            }
+        }
+
+        // Position the phantom at the insertion point
+        const wrapperRect = targetWrapper.getBoundingClientRect();
+        let phantomTop;
+
+        if (position === 'before') {
+            phantomTop = closestBlock.getBoundingClientRect().top - wrapperRect.top;
+        } else {
+            phantomTop = closestBlock.getBoundingClientRect().bottom - wrapperRect.top;
+        }
+
+        phantom.style.display = 'block';
+        phantom.style.top = phantomTop + 'px';
+
+        // Track the drop position for the drop handler
+        this._dropTargetColumn = targetCol;
+        this._dropTargetBlockId = parseInt(closestBlock.dataset.id, 10);
+        this._dropPosition = position;
     },
 };
