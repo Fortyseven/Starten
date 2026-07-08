@@ -92,19 +92,7 @@ class Render
             </div>
         </template>
 
-        <!-- Add item form template -->
-        <template id="add-item-form">
-            <div class="add-item-form">
-                <input type="text" class="item-url-input" placeholder="https://example.com" autofocus>
-                <input type="text" class="item-title-input" placeholder="Title (optional)">
-                <div class="add-item-actions">
-                    <button class="save-item-btn">✓</button>
-                    <button class="cancel-item-btn">×</button>
-                </div>
-            </div>
-        </template>
-
-        <!-- Item edit modal -->
+        <!-- Item edit / add modal -->
         <div id="item-edit-overlay" class="item-edit-overlay"></div>
         <div id="item-edit-modal" class="item-edit-modal">
             <div class="item-edit-header">

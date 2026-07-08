@@ -392,11 +392,11 @@ class LinkListBlock extends BlockBase {
     }
 
     /**
-     * Show the add-item form for this block.
-     * @param {HTMLElement} blockEl - The .block element
+     * Open the add-link modal for this block.
+     * @param {HTMLElement} blockEl - The .block element (kept for API compat)
      */
     showAddForm(blockEl) {
-        Items.showAddForm(blockEl, this.blockId);
+        Items.openAddModal(this.blockId);
     }
 
     /**

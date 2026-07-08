@@ -7,72 +7,10 @@
 
 const Items = {
     itemTemplate: null,
-    addFormTemplate: null,
     dragState: null,
 
     init() {
         this.itemTemplate = document.getElementById('item-template');
-        this.addFormTemplate = document.getElementById('add-item-form');
-    },
-
-    /**
-     * Show the add-item form inside a block.
-     * @param {HTMLElement} blockEl - The .block element
-     * @param {number} blockId - Block ID
-     */
-    showAddForm(blockEl, blockId) {
-        // Remove any existing add forms in this block
-        blockEl.querySelectorAll('.add-item-form').forEach(f => f.remove());
-
-        const clone = this.addFormTemplate.content.cloneNode(true);
-        const form = clone.querySelector('.add-item-form');
-        const urlInput = form.querySelector('.item-url-input');
-        const titleInput = form.querySelector('.item-title-input');
-        const saveBtn = form.querySelector('.save-item-btn');
-        const cancelBtn = form.querySelector('.cancel-item-btn');
-
-        const itemsContainer = blockEl.querySelector('.block-items');
-        itemsContainer.appendChild(form);
-        urlInput.focus();
-
-        const save = async () => {
-            const url = urlInput.value.trim();
-            if (!url) {
-                urlInput.focus();
-                return;
-            }
-
-            const title = titleInput.value.trim();
-            await api('items:add', { block_id: blockId, url, title });
-            await Blocks.load();
-        };
-
-        saveBtn.addEventListener('click', save);
-        cancelBtn.addEventListener('click', () => form.remove());
-
-        urlInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                if (titleInput.value.trim() === '') {
-                    titleInput.focus();
-                } else {
-                    save();
-                }
-            }
-            if (e.key === 'Escape') {
-                form.remove();
-            }
-        });
-
-        titleInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                save();
-            }
-            if (e.key === 'Escape') {
-                form.remove();
-            }
-        });
     },
 
     /**
@@ -89,21 +27,49 @@ const Items = {
     },
 
     /**
-     * Open the item edit modal.
+     * Open the item modal for editing an existing link.
      * @param {Object} item
      */
     openEditModal(item) {
+        this._openItemModal(item, false);
+    },
+
+    /**
+     * Open the item modal for adding a new link.
+     * @param {number} blockId - Block ID to add the link to
+     */
+    openAddModal(blockId) {
+        this._openItemModal({ id: null, block_id: blockId, url: '', title: '' }, true);
+    },
+
+    /**
+     * Open the item modal (shared for add and edit modes).
+     * @param {Object} item - Item data (id: null for add mode)
+     * @param {boolean} isAddMode - Whether in add mode
+     * @private
+     */
+    _openItemModal(item, isAddMode) {
         this._editItem = item;
         const overlay = document.getElementById('item-edit-overlay');
         const modal = document.getElementById('item-edit-modal');
+        const heading = modal.querySelector('.item-edit-header h2');
         const urlInput = document.getElementById('item-edit-url');
         const titleInput = document.getElementById('item-edit-title');
         const saveBtn = document.getElementById('item-edit-save');
         const cancelBtn = document.getElementById('item-edit-cancel');
         const closeBtn = document.getElementById('item-edit-close');
 
-        urlInput.value = item.url || '';
-        titleInput.value = item.title || '';
+        if (isAddMode) {
+            heading.textContent = 'Add Link';
+            saveBtn.textContent = 'Add';
+            urlInput.value = '';
+            titleInput.value = '';
+        } else {
+            heading.textContent = 'Edit Link';
+            saveBtn.textContent = 'Save';
+            urlInput.value = item.url || '';
+            titleInput.value = item.title || '';
+        }
 
         overlay.classList.add('open');
         modal.classList.add('open');
@@ -119,7 +85,11 @@ const Items = {
                 return;
             }
 
-            await api('items:update', { id: item.id, url, title });
+            if (isAddMode) {
+                await api('items:add', { block_id: item.block_id, url, title });
+            } else {
+                await api('items:update', { id: item.id, url, title });
+            }
             this.closeEditModal();
             await Blocks.load();
         };
